@@ -5,6 +5,7 @@ import { useSignalDetail } from '../api/hooks';
 import ScoreBadge from '../components/ScoreBadge';
 import FlagChecklist from '../components/FlagChecklist';
 import FibLadderTable from '../components/FibLadderTable';
+import { colors, radius, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Detail'>;
 
@@ -31,7 +32,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
+      <View style={styles.sectionCard}>{children}</View>
     </View>
   );
 }
@@ -43,7 +44,7 @@ export default function SignalDetailScreen({ route }: Props) {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.gold} />
       </View>
     );
   }
@@ -103,19 +104,40 @@ export default function SignalDetailScreen({ route }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 16, paddingBottom: 40 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  error: { color: '#c0392b' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  title: { fontSize: 22, fontWeight: '800' },
-  subtitle: { fontSize: 13, color: '#888', marginTop: 2 },
-  status: { fontSize: 14, marginBottom: 16, color: '#333' },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#555', textTransform: 'uppercase', marginBottom: 6 },
-  dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-  dataLabel: { color: '#666', fontSize: 14 },
-  dataValue: { fontSize: 14, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  chartButton: { backgroundColor: '#1a73e8', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
-  chartButtonText: { color: 'white', fontWeight: '700', fontSize: 15 },
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.md, paddingBottom: spacing.xl },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  error: { color: colors.danger },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+  title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, letterSpacing: 0.3 },
+  subtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  status: { fontSize: 14, marginBottom: spacing.md, color: colors.textPrimary },
+  section: { marginBottom: spacing.lg },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.gold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
+  },
+  sectionCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+  dataLabel: { color: colors.textSecondary, fontSize: 14 },
+  dataValue: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, fontVariant: ['tabular-nums'] },
+  chartButton: {
+    backgroundColor: colors.gold,
+    borderRadius: radius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  chartButtonText: { color: colors.background, fontWeight: '700', fontSize: 15 },
 });

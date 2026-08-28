@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { colors } from '../theme';
 
 export default function FibLadderTable({ title, levels }: { title: string; levels: Record<string, number> }) {
   const entries = Object.entries(levels).sort((a, b) => Number(a[0]) - Number(b[0]));
@@ -23,19 +24,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#555',
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 2,
+    paddingVertical: 3,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
   ratio: {
-    color: '#888',
+    color: colors.textTertiary,
     fontVariant: ['tabular-nums'],
   },
   price: {
+    color: colors.textPrimary,
     fontVariant: ['tabular-nums'],
   },
 });

@@ -5,13 +5,22 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#161826",
     "plugins": [
       [
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",
           "color": "#161826"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#161826",
+          "image": "./assets/icon.png",
+          "imageWidth": 180
         }
       ]
     ],
