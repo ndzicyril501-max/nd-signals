@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 120" width="720" height="120" role="img" aria-label="NDGroup">
+<g transform="translate(4,10)"><rect x="1.75" y="1.75" width="96.50" height="96.50" rx="22.00" fill="none" stroke="#A8792B" stroke-width="3.50"></rect>
+<g transform="translate(22.00,32.50) scale(0.3500)"><path d="M0,100 V0 H18 L52,58 V0 H70 V100 H52 L18,42 V100 Z" fill="#A8792B"></path><g transform="translate(80,0)"><path d="M0,0 H32 A50,50 0 0 1 32,100 H0 Z M18,16 H32 A34,34 0 0 1 32,84 H18 Z" fill="#4A5159" fill-rule="evenodd"></path></g></g></g>
+<text x="130" y="68" text-anchor="start" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="600" font-size="30" letter-spacing="4.20" fill="#292B31">ND<tspan fill="#75798C">GROUP</tspan></text>
+<text x="132" y="94" text-anchor="start" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-weight="500" font-size="11" letter-spacing="3.30" fill="#75798C">INNOVATE. CONNECT. BUILD VALUE.</text>
+</svg>

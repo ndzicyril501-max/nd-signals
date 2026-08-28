@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "ND Signals",
+    "slug": "nd-signals",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#161826"
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.ndgroup.signals",
+      "adaptiveIcon": {
+        "backgroundColor": "#161826",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "830e8d47-e46c-427a-8f6c-97aeffcc8ff3"
+      }
+    },
+    "owner": "ndgroup"
+  }
+}
