@@ -6,6 +6,7 @@ from app.auth import require_api_key
 from app.db import init_db
 from app.routers import devices, signals
 from app.scan_loop import run_once
+from app.scanner.bybit import get_all_candidates, get_all_tickers
 
 app = FastAPI(title="SMC Scanner API")
 app.include_router(signals.router)
@@ -37,6 +38,29 @@ def _run_once_if_not_running():
         run_once()
     finally:
         _scan_lock.release()
+
+
+@app.get("/internal/debug-bybit", dependencies=[Depends(require_api_key)])
+def debug_bybit():
+    """Temporary diagnostic: is this host's IP able to reach Bybit's public
+    API at all? Some cloud regions (notably US) get blocked/geofenced by
+    Bybit, which would silently produce zero candidates every scan."""
+    result = {}
+    try:
+        tickers = get_all_tickers()
+        result["tickers_count"] = len(tickers)
+        result["sample_ticker"] = tickers[0] if tickers else None
+    except Exception as e:
+        result["tickers_error"] = f"{type(e).__name__}: {e}"
+        return result
+
+    try:
+        candidates = get_all_candidates()
+        result["candidates_count"] = len(candidates)
+        result["sample_candidates"] = [c["symbol"] for c in candidates[:5]]
+    except Exception as e:
+        result["candidates_error"] = f"{type(e).__name__}: {e}"
+    return result
 
 
 @app.post("/internal/run-scan-now", dependencies=[Depends(require_api_key)])
