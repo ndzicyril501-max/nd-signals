@@ -35,7 +35,7 @@ function Row({ label, value }: { label: string; value: string | number }) {
   return (
     <View style={styles.dataRow}>
       <Text style={styles.dataLabel}>{label}</Text>
-      <Text style={styles.dataValue}>{value}</Text>
+      <Text style={styles.dataValue} numberOfLines={2}>{value}</Text>
     </View>
   );
 }
@@ -104,13 +104,21 @@ export default function SignalDetailScreen({ route, navigation }: Props) {
 
           <Text style={styles.sectionTitle}>POSITION RAIL</Text>
           <View style={styles.railCard}>
-            <PositionRailVertical sl={s.sl} entry={s.entry} tp1={s.tp1} tp2={s.tp2} tp3={s.tp3} currentPrice={s.last_price} />
+            <PositionRailVertical
+              sl={s.sl}
+              entry={s.entry}
+              tp1={s.tp1}
+              tp2={s.tp2}
+              tp3={s.tp3}
+              currentPrice={s.last_price ?? s.price_at_scan}
+            />
           </View>
 
           <Section title="TRADE PLAN">
             <View style={styles.card}>
               <Row label="Entry Zone" value={`${s.zone_low} – ${s.zone_high}`} />
               <Row label="Fib Entry" value={`${s.entry} (${s.entry_method})`} />
+              <Row label="Stop Loss" value={`${s.sl} (${(((s.sl - s.entry) / s.entry) * 100).toFixed(2)}% from entry)`} />
               <Row label="R:R at fib entry" value={`${s.rr}:1 (risk ${s.risk})`} />
               <Row label="R:R at zone edge" value={`${s.rr_zone_low}:1 (risk ${s.risk_zone_low})`} />
               <Row label="24h Gain" value={`+${s.gainer_pct24h.toFixed(1)}%`} />
@@ -210,9 +218,9 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
-  dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5 },
-  dataLabel: { fontFamily: fonts.sans, color: colors.textSecondary, fontSize: 13 },
-  dataValue: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.textPrimary, textAlign: 'right' },
+  dataRow: { flexDirection: 'row', paddingVertical: 5, gap: spacing.sm },
+  dataLabel: { flexShrink: 0, maxWidth: '42%', fontFamily: fonts.sans, color: colors.textSecondary, fontSize: 13 },
+  dataValue: { flex: 1, fontFamily: fonts.mono, fontSize: 12.5, color: colors.textPrimary, textAlign: 'right' },
 
   flagRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
   flagMark: { fontFamily: fonts.monoBold, fontSize: 12, width: 12 },

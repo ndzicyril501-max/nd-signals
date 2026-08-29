@@ -60,7 +60,12 @@ export function PositionRailVertical({ sl, entry, tp1, tp2, tp3, currentPrice }:
     <View style={styles.vContainer}>
       <View style={styles.vLine} />
       {markerPct != null && (
-        <View style={[styles.vMarker, { top: `${markerPct}%` }]} />
+        <>
+          <View style={[styles.vMarker, { top: `${markerPct}%` }]} />
+          <View style={[styles.vCurrentBadge, { top: `${markerPct}%` }]}>
+            <Text style={styles.vCurrentBadgeText}>{currentPrice} · CURRENT</Text>
+          </View>
+        </>
       )}
       {rows.map((row) => (
         <View key={row.label} style={styles.vRow}>
@@ -100,6 +105,11 @@ const styles = StyleSheet.create({
     position: 'absolute', left: 4, width: 9, height: 9, borderRadius: 5, marginTop: -4.5,
     backgroundColor: colors.gold, shadowColor: colors.gold, shadowOpacity: 0.8, shadowRadius: 6, elevation: 4,
   },
+  vCurrentBadge: {
+    position: 'absolute', right: 0, marginTop: -9, paddingHorizontal: 6, paddingVertical: 2,
+    borderRadius: 4, borderWidth: 1, borderColor: colors.gold, backgroundColor: colors.surfaceElevated,
+  },
+  vCurrentBadgeText: { fontFamily: fonts.monoBold, fontSize: 9, color: colors.gold },
   vRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   vDot: { width: 7, height: 7, borderRadius: 4, marginLeft: -3.5 },
   vLabel: { width: 38, fontFamily: fonts.mono, fontSize: 10, letterSpacing: 1 },

@@ -42,7 +42,7 @@ function Header({ activeCount }: { activeCount: number }) {
           <Text style={styles.brandMarkText}>ND</Text>
         </View>
         <View style={styles.headerTitleBlock}>
-          <Text style={styles.headerTitle}>ND SIGNALS</Text>
+          <Text style={styles.headerTitle} numberOfLines={1} adjustsFontSizeToFit>NDGROUP TRADING DESK</Text>
           <Text style={styles.headerSubtitle}>SMC SHORT SCANNER</Text>
         </View>
         <ScanCountdown />
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   brandMark: { width: 26, height: 26, borderWidth: 1.6, borderColor: colors.gold, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
   brandMarkText: { fontFamily: fonts.monoBold, fontSize: 10, color: colors.gold },
   headerTitleBlock: { flex: 1 },
-  headerTitle: { fontFamily: fonts.sansSemiBold, fontSize: 13, letterSpacing: 2, color: colors.textPrimary },
+  headerTitle: { fontFamily: fonts.sansSemiBold, fontSize: 12.5, letterSpacing: 1, color: colors.textPrimary },
   headerSubtitle: { fontFamily: fonts.monoRegular, fontSize: 9, letterSpacing: 1.5, color: colors.textQuaternary, marginTop: 1 },
   statsRow: { flexDirection: 'row', marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
 
