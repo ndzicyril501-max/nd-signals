@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useSignals, useStatsSummary, usePerformance } from '../api/hooks';
 import { SignalListItem } from '../types/signal';
@@ -34,8 +35,9 @@ function unrealizedPct(entry: number, lastPrice: number | null): number | null {
 
 function Header({ activeCount }: { activeCount: number }) {
   const { data: stats } = useStatsSummary();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.headerRow}>
         <View style={styles.brandMark}>
           <Text style={styles.brandMarkText}>ND</Text>

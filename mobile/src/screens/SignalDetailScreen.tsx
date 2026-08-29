@@ -1,5 +1,6 @@
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SignalsStackParamList } from '../navigation/RootNavigator';
 import { useSignalDetail } from '../api/hooks';
 import PhaseChip from '../components/PhaseChip';
@@ -51,10 +52,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function SignalDetailScreen({ route, navigation }: Props) {
   const { signalId } = route.params;
   const { data: s, loading, error } = useSignalDetail(signalId);
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>

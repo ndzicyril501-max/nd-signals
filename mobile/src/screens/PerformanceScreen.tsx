@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Line, Polygon, Polyline, Stop } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePerformance } from '../api/hooks';
 import StatCard from '../components/StatCard';
 import BrandFooter from '../components/BrandFooter';
@@ -66,10 +67,11 @@ function ScoreBar({ score, n, winPct }: { score: number; n: number; winPct: numb
 
 export default function PerformanceScreen() {
   const { data: perf, loading } = usePerformance();
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
         <Text style={styles.headerTitle}>PERFORMANCE</Text>
         <Text style={styles.headerSubtitle}>ND DESK · ALL-TIME</Text>
       </View>
