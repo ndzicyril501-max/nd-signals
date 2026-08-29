@@ -5,7 +5,8 @@ function navigateToSignal(data: Record<string, unknown> | undefined) {
   const signalId = data?.signal_id;
   if (typeof signalId !== 'number') return;
   if (navigationRef.isReady()) {
-    navigationRef.navigate('Detail', { signalId });
+    // Detail lives inside the Signals tab's nested stack.
+    navigationRef.navigate('Signals', { screen: 'Detail', params: { signalId } });
   }
 }
 

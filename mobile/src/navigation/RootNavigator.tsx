@@ -1,15 +1,28 @@
 import { DarkTheme, NavigationContainer, Theme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text } from 'react-native';
 import SignalFeedScreen from '../screens/SignalFeedScreen';
 import SignalDetailScreen from '../screens/SignalDetailScreen';
-import { colors } from '../theme';
+import PerformanceScreen from '../screens/PerformanceScreen';
+import { colors, fonts } from '../theme';
 
-export type RootStackParamList = {
+export type SignalsStackParamList = {
   Feed: undefined;
   Detail: { signalId: number };
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+export type RootTabParamList = {
+  Signals: undefined;
+  Performance: undefined;
+};
+
+// Kept as the type other files (push-notification deep link) navigate
+// against -- it's really the nested signals-stack param list.
+export type RootStackParamList = SignalsStackParamList;
+
+const Stack = createNativeStackNavigator<SignalsStackParamList>();
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
 const ndTheme: Theme = {
   ...DarkTheme,
@@ -24,28 +37,51 @@ const ndTheme: Theme = {
   },
 };
 
+function SignalsStack() {
+  return (
+    <Stack.Navigator initialRouteName="Feed" screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Feed" component={SignalFeedScreen} />
+      <Stack.Screen name="Detail" component={SignalDetailScreen} />
+    </Stack.Navigator>
+  );
+}
+
 // A listener registered outside any screen (e.g. a push-notification tap
 // handler at the app root) can't rely on a screen's own `navigation` prop --
 // it may fire before the navigator has mounted. A ref gives it a stable
-// handle to navigate with regardless of when it fires.
-export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+// handle to navigate with regardless of when it fires. Nested navigator
+// routes are addressed as { screen, params }.
+export const navigationRef = createNavigationContainerRef<Record<string, object | undefined>>();
 
 export default function RootNavigator() {
   return (
     <NavigationContainer ref={navigationRef} theme={ndTheme}>
-      <Stack.Navigator
-        initialRouteName="Feed"
+      <Tab.Navigator
         screenOptions={{
-          headerStyle: { backgroundColor: colors.surface },
-          headerTintColor: colors.gold,
-          headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
-          headerShadowVisible: false,
-          contentStyle: { backgroundColor: colors.background },
+          headerShown: false,
+          tabBarStyle: { backgroundColor: colors.headerBg, borderTopColor: colors.border, height: 56, paddingBottom: 6 },
+          tabBarActiveTintColor: colors.gold,
+          tabBarInactiveTintColor: colors.textQuaternary,
+          tabBarLabelStyle: { fontFamily: fonts.monoBold, fontSize: 9, letterSpacing: 1 },
         }}
       >
-        <Stack.Screen name="Feed" component={SignalFeedScreen} options={{ title: 'ND Signals' }} />
-        <Stack.Screen name="Detail" component={SignalDetailScreen} options={{ title: 'Signal Detail' }} />
-      </Stack.Navigator>
+        <Tab.Screen
+          name="Signals"
+          component={SignalsStack}
+          options={{
+            tabBarLabel: 'SIGNALS',
+            tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 15 }}>◈</Text>,
+          }}
+        />
+        <Tab.Screen
+          name="Performance"
+          component={PerformanceScreen}
+          options={{
+            tabBarLabel: 'PERFORMANCE',
+            tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 15 }}>◱</Text>,
+          }}
+        />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }

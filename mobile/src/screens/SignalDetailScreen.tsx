@@ -1,25 +1,33 @@
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/RootNavigator';
+import { SignalsStackParamList } from '../navigation/RootNavigator';
 import { useSignalDetail } from '../api/hooks';
-import { SignalDetail } from '../types/signal';
-import ScoreBadge from '../components/ScoreBadge';
-import FlagChecklist from '../components/FlagChecklist';
-import FibLadderTable from '../components/FibLadderTable';
-import { colors, radius, spacing } from '../theme';
+import PhaseChip from '../components/PhaseChip';
+import { PositionRailVertical } from '../components/PositionRail';
+import { colors, fonts, radius, spacing } from '../theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Detail'>;
+type Props = NativeStackScreenProps<SignalsStackParamList, 'Detail'>;
 
 function tradingViewLink(symbol: string): string {
   return `https://www.tradingview.com/chart/?symbol=BYBIT:${symbol}.P`;
 }
 
-function statusText(s: SignalDetail): { text: string; tone: 'active' | 'win' | 'loss' } {
-  if (s.status === 'hit_tp3') return { text: `🏁 Target hit @ ${s.closed_price}`, tone: 'win' };
-  if (s.status === 'hit_sl') return { text: `🛑 Stopped out @ ${s.closed_price}`, tone: 'loss' };
-  if (s.at_entry) return { text: '🎯 Price is AT the fib entry right now', tone: 'active' };
-  if (s.in_zone) return { text: '✅ Price is INSIDE the entry zone (fib level not tagged yet)', tone: 'active' };
-  return { text: `⏳ ${s.distance_pct.toFixed(1)}% below the zone — waiting for the retrace up`, tone: 'active' };
+function statusText(s: {
+  status: string; closed_price: number | null; at_entry: boolean; in_zone: boolean; distance_pct: number;
+}): { text: string; tone: 'active' | 'win' | 'loss' } {
+  if (s.status === 'hit_tp3') return { text: `Target hit @ ${s.closed_price}`, tone: 'win' };
+  if (s.status === 'hit_sl') return { text: `Stopped out @ ${s.closed_price}`, tone: 'loss' };
+  if (s.at_entry) return { text: 'Price is AT the fib entry right now', tone: 'active' };
+  if (s.in_zone) return { text: 'Price is INSIDE the entry zone (fib level not tagged yet)', tone: 'active' };
+  return { text: `${s.distance_pct.toFixed(1)}% below the zone — waiting for the retrace up`, tone: 'active' };
+}
+
+// The scanner bakes the point value into the flag's own name, e.g.
+// "price at zone (+2)" -- split it back out for display instead of
+// dropping that information on the floor.
+function splitFlagLabel(name: string): { label: string; pts: string | null } {
+  const m = /^(.*)\s\((\+\d+)\)$/.exec(name);
+  return m ? { label: m[1], pts: m[2] } : { label: name, pts: null };
 }
 
 function Row({ label, value }: { label: string; value: string | number }) {
@@ -35,121 +43,189 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionCard}>{children}</View>
+      {children}
     </View>
   );
 }
 
-export default function SignalDetailScreen({ route }: Props) {
+export default function SignalDetailScreen({ route, navigation }: Props) {
   const { signalId } = route.params;
   const { data: s, loading, error } = useSignalDetail(signalId);
 
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color={colors.gold} />
-      </View>
-    );
-  }
-  if (error || !s) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.error}>{error ?? 'Signal not found'}</Text>
-      </View>
-    );
-  }
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>{s.symbol}</Text>
-          <Text style={styles.subtitle}>{s.timeframe} · {s.gainer_source === 'top_gainer' ? 'Top Gainer' : 'Impulsive Move'}</Text>
-        </View>
-        <ScoreBadge score={s.score} />
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        {s && (
+          <>
+            <View style={{ flex: 1 }}>
+              <View style={styles.headerTitleRow}>
+                <Text style={styles.headerSymbol}>{s.symbol}</Text>
+                <PhaseChip kind="short" />
+              </View>
+              <Text style={styles.headerMeta}>
+                {s.timeframe} · {s.gainer_source === 'top_gainer' ? 'Top Gainer' : 'Impulsive Move'} · #{s.id}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={styles.headerScore}>{s.score}</Text>
+              <Text style={styles.headerScoreLabel}>SCORE/10</Text>
+            </View>
+          </>
+        )}
       </View>
 
-      {(() => {
-        const { text, tone } = statusText(s);
-        return (
-          <Text style={[styles.status, tone === 'win' && styles.statusWin, tone === 'loss' && styles.statusLoss]}>
-            {text}
-          </Text>
-        );
-      })()}
+      {loading && (
+        <View style={styles.centered}>
+          <ActivityIndicator color={colors.gold} />
+        </View>
+      )}
+      {error && !loading && (
+        <View style={styles.centered}>
+          <Text style={styles.error}>{error}</Text>
+        </View>
+      )}
 
-      <Section title="Market">
-        <Row label="24h Gain" value={`+${s.gainer_pct24h.toFixed(1)}%`} />
-        <Row label="24h Volume" value={`$${s.gainer_vol24h.toLocaleString()}`} />
-        <Row label="24h High-Low Swing" value={`${s.gainer_move24h.toFixed(1)}%`} />
-        <Row label="Funding" value={`${(s.gainer_funding_rate * 100).toFixed(4)}%`} />
-        <Row label="Price" value={s.price_at_scan} />
-      </Section>
+      {s && (
+        <ScrollView style={styles.body} contentContainerStyle={styles.content}>
+          {(() => {
+            const { text, tone } = statusText(s);
+            return (
+              <View style={[styles.statusBanner, tone !== 'active' && { borderColor: tone === 'win' ? colors.gold : colors.danger }]}>
+                <View style={[styles.statusDot, { backgroundColor: tone === 'loss' ? colors.danger : colors.gold }]} />
+                <Text style={styles.statusText}>{text}</Text>
+              </View>
+            );
+          })()}
 
-      <Section title="Trade Plan">
-        <Row label="Entry Zone" value={`${s.zone_low} – ${s.zone_high}`} />
-        <Row label="Fib Entry" value={`${s.entry} (${s.entry_method})`} />
-        <Row label="Stop Loss" value={s.sl} />
-        <Row label="TP1" value={s.tp1} />
-        <Row label="TP2" value={s.tp2} />
-        <Row label="TP3" value={s.tp3} />
-        <Row label="R:R at fib entry" value={`${s.rr}:1 (risk ${s.risk})`} />
-        <Row label="R:R at zone edge" value={`${s.rr_zone_low}:1 (risk ${s.risk_zone_low})`} />
-      </Section>
+          <Text style={styles.sectionTitle}>POSITION RAIL</Text>
+          <View style={styles.railCard}>
+            <PositionRailVertical sl={s.sl} entry={s.entry} tp1={s.tp1} tp2={s.tp2} tp3={s.tp3} currentPrice={s.last_price} />
+          </View>
 
-      <Section title="Confluences">
-        <FlagChecklist flags={s.flags} />
-      </Section>
+          <Section title="TRADE PLAN">
+            <View style={styles.card}>
+              <Row label="Entry Zone" value={`${s.zone_low} – ${s.zone_high}`} />
+              <Row label="Fib Entry" value={`${s.entry} (${s.entry_method})`} />
+              <Row label="R:R at fib entry" value={`${s.rr}:1 (risk ${s.risk})`} />
+              <Row label="R:R at zone edge" value={`${s.rr_zone_low}:1 (risk ${s.risk_zone_low})`} />
+              <Row label="24h Gain" value={`+${s.gainer_pct24h.toFixed(1)}%`} />
+              <Row label="24h Volume" value={`$${s.gainer_vol24h.toLocaleString()}`} />
+              <Row label="Funding" value={`${(s.gainer_funding_rate * 100).toFixed(4)}%`} />
+              <Row label="Price at scan" value={s.price_at_scan} />
+            </View>
+          </Section>
 
-      <Section title="Fib Ladder">
-        <FibLadderTable title="OB levels" levels={s.fib_ob_levels} />
-        <FibLadderTable title="Leg levels" levels={s.fib_leg_levels} />
-      </Section>
+          <Section title="CONFLUENCES">
+            <View style={styles.card}>
+              {Object.entries(s.flags).map(([name, earned]) => {
+                const { label, pts } = splitFlagLabel(name);
+                return (
+                  <View key={name} style={styles.flagRow}>
+                    <Text style={[styles.flagMark, { color: earned ? colors.gold : colors.textQuaternary }]}>
+                      {earned ? '✓' : '—'}
+                    </Text>
+                    <Text style={[styles.flagLabel, { color: earned ? colors.iconGray : colors.textTertiary }]}>{label}</Text>
+                    {pts && <Text style={styles.flagPts}>{pts}</Text>}
+                  </View>
+                );
+              })}
+            </View>
+          </Section>
 
-      <TouchableOpacity style={styles.chartButton} onPress={() => Linking.openURL(tradingViewLink(s.symbol))}>
-        <Text style={styles.chartButtonText}>📊 Open Chart on TradingView</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          <Section title="FIB LADDER — OB">
+            <View style={styles.card}>
+              {Object.entries(s.fib_ob_levels)
+                .sort((a, b) => Number(a[0]) - Number(b[0]))
+                .map(([ratio, price]) => (
+                  <View key={ratio} style={styles.fibRow}>
+                    <Text style={styles.fibRatio}>{Number(ratio).toFixed(3)}</Text>
+                    <View style={styles.fibTrack}>
+                      <View style={[styles.fibFill, { width: `${Number(ratio) * 100}%` }]} />
+                    </View>
+                    <Text style={styles.fibPrice}>{price}</Text>
+                  </View>
+                ))}
+            </View>
+          </Section>
+
+          <TouchableOpacity style={styles.chartButton} onPress={() => Linking.openURL(tradingViewLink(s.symbol))}>
+            <Text style={styles.chartButtonText}>Open on TradingView</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   error: { color: colors.danger },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-  title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, letterSpacing: 0.3 },
-  subtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  status: { fontSize: 14, marginBottom: spacing.md, color: colors.textPrimary, fontWeight: '600' },
-  statusWin: { color: colors.gold },
-  statusLoss: { color: colors.danger },
-  section: { marginBottom: spacing.lg },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.gold,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
-  },
-  sectionCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
-  dataLabel: { color: colors.textSecondary, fontSize: 14 },
-  dataValue: { fontSize: 14, fontWeight: '600', color: colors.textPrimary, fontVariant: ['tabular-nums'] },
-  chartButton: {
-    backgroundColor: colors.gold,
-    borderRadius: radius.md,
-    paddingVertical: 14,
+
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.sm,
+    gap: 12,
+    paddingHorizontal: spacing.md,
+    paddingTop: 14,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.headerBg,
   },
-  chartButtonText: { color: colors.background, fontWeight: '700', fontSize: 15 },
+  backButton: {
+    width: 30, height: 30, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  backButtonText: { color: colors.gold, fontSize: 15 },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+  headerSymbol: { fontFamily: fonts.monoBold, fontSize: 19, letterSpacing: -0.4, color: colors.textPrimary },
+  headerMeta: { fontFamily: fonts.monoRegular, fontSize: 10.5, letterSpacing: 1, color: colors.textQuaternary, marginTop: 3 },
+  headerScore: { fontFamily: fonts.monoBold, fontSize: 17, color: colors.gold },
+  headerScoreLabel: { fontFamily: fonts.monoRegular, fontSize: 9, letterSpacing: 1, color: colors.textQuaternary },
+
+  body: { flex: 1 },
+  content: { padding: spacing.md, paddingBottom: spacing.xl },
+
+  statusBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    padding: 11, borderRadius: radius.sm, marginBottom: spacing.md,
+    backgroundColor: 'rgba(201,162,74,0.09)', borderWidth: 1, borderColor: 'rgba(201,162,74,0.3)',
+  },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusText: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 12.5, color: colors.goldBright },
+
+  sectionTitle: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 2, color: colors.gold, marginBottom: 10 },
+  section: { marginBottom: spacing.lg },
+  railCard: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
+    padding: 14, marginBottom: spacing.lg,
+  },
+  card: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+  },
+  dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5 },
+  dataLabel: { fontFamily: fonts.sans, color: colors.textSecondary, fontSize: 13 },
+  dataValue: { fontFamily: fonts.mono, fontSize: 12.5, color: colors.textPrimary, textAlign: 'right' },
+
+  flagRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+  flagMark: { fontFamily: fonts.monoBold, fontSize: 12, width: 12 },
+  flagLabel: { flex: 1, fontFamily: fonts.sans, fontSize: 12.5 },
+  flagPts: { fontFamily: fonts.mono, fontSize: 11, color: colors.textQuaternary },
+
+  fibRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  fibRatio: { width: 44, fontFamily: fonts.monoRegular, fontSize: 11, color: colors.textQuaternary },
+  fibTrack: { flex: 1, height: 2, backgroundColor: colors.border, overflow: 'hidden' },
+  fibFill: { height: '100%', backgroundColor: colors.goldDim },
+  fibPrice: { fontFamily: fonts.monoRegular, fontSize: 11.5, color: colors.textPrimary },
+
+  chartButton: {
+    borderWidth: 1, borderColor: colors.gold, borderRadius: radius.md,
+    paddingVertical: 12, alignItems: 'center', marginTop: spacing.sm,
+  },
+  chartButtonText: { fontFamily: fonts.sansMedium, color: colors.gold, fontSize: 12.5 },
 });

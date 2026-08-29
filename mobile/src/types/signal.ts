@@ -10,6 +10,12 @@ export interface SignalListItem {
   created_at: string;
   status: SignalStatus;
   closed_price: number | null;
+  last_price: number | null;
+  entry: number;
+  sl: number;
+  tp1: number;
+  tp2: number;
+  tp3: number;
 }
 
 export interface SignalDetail {
@@ -56,4 +62,6 @@ export interface SignalDetail {
   status: SignalStatus;
   closed_at: string | null;
   closed_price: number | null;
+  last_price: number | null;
+  last_checked_at: string | null;
 }

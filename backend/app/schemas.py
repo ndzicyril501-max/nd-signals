@@ -18,6 +18,11 @@ class SignalListItem(BaseModel):
     status: str
     closed_price: Optional[float] = None
     last_price: Optional[float] = None
+    entry: float
+    sl: float
+    tp1: float
+    tp2: float
+    tp3: float
 
 
 class SignalDetail(BaseModel):

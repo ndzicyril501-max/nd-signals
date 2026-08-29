@@ -1,29 +1,46 @@
-// ND Group brand palette, pulled from `ndgroup logo/*.svg` (the dark/navy
-// lockup variant, since the app commits to a single dark brand theme rather
-// than switching between light/dark).
+// ND Group brand palette + component tokens, matched to the Claude Design
+// mockup ("ND Signals App.dc.html" — Nocturne dark ground, ND gold accent).
 export const colors = {
   background: '#161826',
-  surface: '#1E2133',
-  surfaceElevated: '#262A40',
-  border: '#2E3350',
+  headerBg: '#1a1d2e',
+  surface: '#1e2133',
+  surfaceMuted: '#1c1e2c',
+  surfaceElevated: '#232742',
+  border: '#2e3350',
 
-  gold: '#C9A24A',
-  goldMuted: '#8A7038',
-  goldDim: '#4A3F26',
+  gold: '#c9a24a',
+  goldBright: '#dcb865',
+  goldMuted: '#8a7038',
+  goldDim: '#4a3f26',
 
-  textPrimary: '#E9E9ED',
-  textSecondary: '#9397AB',
-  textTertiary: '#6B6F82',
+  textPrimary: '#e9e9ed',
+  textSecondary: '#9397ab',
+  textTertiary: '#75798c',
+  textQuaternary: '#6b6f82',
 
-  iconGray: '#C3CAD2',
-  danger: '#B0473E',
+  iconGray: '#c3cad2',
+  neutralLine: '#595d6c',
+  danger: '#b0473e',
+  dangerMuted: '#8a5b55',
 } as const;
 
-export const scoreColor = (score: number): string => {
-  if (score >= 10) return colors.gold;
-  if (score >= 9) return colors.gold;
-  return colors.goldMuted;
+// Tiered exactly as the mockup's "SCORE BADGE — 7 -> 10" component sheet.
+export const scoreTier = (score: number): { fg: string; border: string; bg: string; glow: boolean } => {
+  if (score >= 10) return { fg: colors.gold, border: colors.gold, bg: 'rgba(201,162,74,0.15)', glow: true };
+  if (score >= 9) return { fg: colors.gold, border: colors.gold, bg: 'rgba(201,162,74,0.15)', glow: false };
+  if (score >= 8) return { fg: colors.gold, border: colors.goldMuted, bg: 'rgba(138,112,56,0.12)', glow: false };
+  return { fg: colors.textSecondary, border: colors.neutralLine, bg: 'transparent', glow: false };
 };
+
+export const fonts = {
+  mono: 'JetBrainsMono_500Medium',
+  monoBold: 'JetBrainsMono_700Bold',
+  monoRegular: 'JetBrainsMono_400Regular',
+  sans: 'Inter_400Regular',
+  sansMedium: 'Inter_500Medium',
+  sansSemiBold: 'Inter_600SemiBold',
+  sansBold: 'Inter_700Bold',
+} as const;
 
 export const spacing = {
   xs: 4,
@@ -34,7 +51,7 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
+  sm: 6,
+  md: 10,
+  lg: 14,
 } as const;

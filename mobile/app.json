@@ -22,7 +22,8 @@
           "image": "./assets/icon.png",
           "imageWidth": 180
         }
-      ]
+      ],
+      "expo-font"
     ],
     "android": {
       "package": "com.ndgroup.signals",

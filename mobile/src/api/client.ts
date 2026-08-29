@@ -1,4 +1,5 @@
 import { SignalDetail, SignalListItem } from '../types/signal';
+import { Performance, ScanStatus, StatsSummary } from '../types/stats';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080';
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY ?? '';
@@ -28,6 +29,18 @@ export function fetchSignals(opts?: { minScore?: number; active?: boolean }): Pr
 
 export function fetchSignalDetail(id: number): Promise<SignalDetail> {
   return request<SignalDetail>(`/signals/${id}`);
+}
+
+export function fetchStatsSummary(): Promise<StatsSummary> {
+  return request<StatsSummary>('/stats/summary');
+}
+
+export function fetchScanStatus(): Promise<ScanStatus> {
+  return request<ScanStatus>('/scan-status');
+}
+
+export function fetchPerformance(): Promise<Performance> {
+  return request<Performance>('/stats/performance');
 }
 
 export function registerDevice(expoPushToken: string, platform: 'ios' | 'android'): Promise<unknown> {

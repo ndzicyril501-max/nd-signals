@@ -1,11 +1,9 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing } from '../theme';
+import { colors, fonts, spacing } from '../theme';
 
 export default function BrandFooter() {
-  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.container, { paddingBottom: spacing.md + insets.bottom }]}>
+    <View style={styles.container}>
       <Image source={require('../../assets/brand-mark.png')} style={styles.mark} />
       <View>
         <Text style={styles.name}>Developed by ND Group</Text>
@@ -20,26 +18,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: spacing.md,
+    paddingVertical: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     backgroundColor: colors.background,
   },
   mark: {
-    width: 22,
-    height: 22,
+    width: 20,
+    height: 20,
     borderRadius: 5,
     marginRight: spacing.sm,
   },
   name: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    color: colors.textTertiary,
   },
   tagline: {
-    fontSize: 9,
-    letterSpacing: 1,
-    color: colors.textTertiary,
+    fontFamily: fonts.monoRegular,
+    fontSize: 8.5,
+    letterSpacing: 1.5,
+    color: colors.textQuaternary,
     marginTop: 1,
   },
 });
