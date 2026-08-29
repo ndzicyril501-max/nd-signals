@@ -18,9 +18,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export function fetchSignals(minScore?: number): Promise<SignalListItem[]> {
-  const query = minScore != null ? `?min_score=${minScore}` : '';
-  return request<SignalListItem[]>(`/signals${query}`);
+export function fetchSignals(opts?: { minScore?: number; active?: boolean }): Promise<SignalListItem[]> {
+  const params = new URLSearchParams();
+  if (opts?.minScore != null) params.set('min_score', String(opts.minScore));
+  if (opts?.active != null) params.set('active', String(opts.active));
+  const query = params.toString();
+  return request<SignalListItem[]>(`/signals${query ? `?${query}` : ''}`);
 }
 
 export function fetchSignalDetail(id: number): Promise<SignalDetail> {

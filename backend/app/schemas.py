@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 from pydantic import BaseModel
 
@@ -15,6 +15,8 @@ class SignalListItem(BaseModel):
     rr: float
     phase: str
     created_at: datetime
+    status: str
+    closed_price: Optional[float] = None
 
 
 class SignalDetail(BaseModel):
@@ -58,6 +60,9 @@ class SignalDetail(BaseModel):
     gainer_source: str
 
     notified: bool
+    status: str
+    closed_at: Optional[datetime] = None
+    closed_price: Optional[float] = None
 
     @classmethod
     def from_signal(cls, s: Signal) -> "SignalDetail":

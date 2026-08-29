@@ -2,6 +2,7 @@ import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpac
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { useSignalDetail } from '../api/hooks';
+import { SignalDetail } from '../types/signal';
 import ScoreBadge from '../components/ScoreBadge';
 import FlagChecklist from '../components/FlagChecklist';
 import FibLadderTable from '../components/FibLadderTable';
@@ -13,10 +14,12 @@ function tradingViewLink(symbol: string): string {
   return `https://www.tradingview.com/chart/?symbol=BYBIT:${symbol}.P`;
 }
 
-function statusText(atEntry: boolean, inZone: boolean, distancePct: number): string {
-  if (atEntry) return '🎯 Price is AT the fib entry right now';
-  if (inZone) return '✅ Price is INSIDE the entry zone (fib level not tagged yet)';
-  return `⏳ ${distancePct.toFixed(1)}% below the zone — waiting for the retrace up`;
+function statusText(s: SignalDetail): { text: string; tone: 'active' | 'win' | 'loss' } {
+  if (s.status === 'hit_tp3') return { text: `🏁 Target hit @ ${s.closed_price}`, tone: 'win' };
+  if (s.status === 'hit_sl') return { text: `🛑 Stopped out @ ${s.closed_price}`, tone: 'loss' };
+  if (s.at_entry) return { text: '🎯 Price is AT the fib entry right now', tone: 'active' };
+  if (s.in_zone) return { text: '✅ Price is INSIDE the entry zone (fib level not tagged yet)', tone: 'active' };
+  return { text: `⏳ ${s.distance_pct.toFixed(1)}% below the zone — waiting for the retrace up`, tone: 'active' };
 }
 
 function Row({ label, value }: { label: string; value: string | number }) {
@@ -66,7 +69,14 @@ export default function SignalDetailScreen({ route }: Props) {
         <ScoreBadge score={s.score} />
       </View>
 
-      <Text style={styles.status}>{statusText(s.at_entry, s.in_zone, s.distance_pct)}</Text>
+      {(() => {
+        const { text, tone } = statusText(s);
+        return (
+          <Text style={[styles.status, tone === 'win' && styles.statusWin, tone === 'loss' && styles.statusLoss]}>
+            {text}
+          </Text>
+        );
+      })()}
 
       <Section title="Market">
         <Row label="24h Gain" value={`+${s.gainer_pct24h.toFixed(1)}%`} />
@@ -111,7 +121,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   title: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, letterSpacing: 0.3 },
   subtitle: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
-  status: { fontSize: 14, marginBottom: spacing.md, color: colors.textPrimary },
+  status: { fontSize: 14, marginBottom: spacing.md, color: colors.textPrimary, fontWeight: '600' },
+  statusWin: { color: colors.gold },
+  statusLoss: { color: colors.danger },
   section: { marginBottom: spacing.lg },
   sectionTitle: {
     fontSize: 12,

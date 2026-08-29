@@ -50,6 +50,13 @@ class Signal(SQLModel, table=True):
 
     notified: bool = False
 
+    # Tracks the trade after the alert fires -- "active" until price closes
+    # the position one way or another. Refreshed every scan by comparing the
+    # current price against this row's own sl/tp3 (see app/position_tracker.py).
+    status: str = Field(default="active", index=True)   # "active" | "hit_sl" | "hit_tp3"
+    closed_at: Optional[datetime] = None
+    closed_price: Optional[float] = None
+
 
 class SignalState(SQLModel, table=True):
     """Direct replacement for scanner_state.json -- dedup/phase tracking per

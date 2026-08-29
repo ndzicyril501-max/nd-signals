@@ -9,7 +9,7 @@ interface AsyncState<T> {
   refetch: () => void;
 }
 
-export function useSignals(minScore?: number): AsyncState<SignalListItem[]> {
+export function useSignals(opts?: { minScore?: number; active?: boolean }): AsyncState<SignalListItem[]> {
   const [data, setData] = useState<SignalListItem[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +18,7 @@ export function useSignals(minScore?: number): AsyncState<SignalListItem[]> {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    fetchSignals(minScore)
+    fetchSignals(opts)
       .then((result) => {
         if (!cancelled) setData(result);
       })
@@ -31,7 +31,8 @@ export function useSignals(minScore?: number): AsyncState<SignalListItem[]> {
     return () => {
       cancelled = true;
     };
-  }, [minScore, tick]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opts?.minScore, opts?.active, tick]);
 
   const refetch = useCallback(() => setTick((t) => t + 1), []);
   return { data, loading, error, refetch };

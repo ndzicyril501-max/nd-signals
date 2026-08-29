@@ -1,3 +1,5 @@
+export type SignalStatus = 'active' | 'hit_sl' | 'hit_tp3';
+
 export interface SignalListItem {
   id: number;
   symbol: string;
@@ -6,6 +8,8 @@ export interface SignalListItem {
   rr: number;
   phase: 'near' | 'in_zone' | 'at_entry';
   created_at: string;
+  status: SignalStatus;
+  closed_price: number | null;
 }
 
 export interface SignalDetail {
@@ -49,4 +53,7 @@ export interface SignalDetail {
   gainer_source: string;
 
   notified: boolean;
+  status: SignalStatus;
+  closed_at: string | null;
+  closed_price: number | null;
 }

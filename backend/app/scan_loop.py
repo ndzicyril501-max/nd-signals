@@ -10,11 +10,17 @@ from app.config import (
 )
 from app.db import engine
 from app.models import SignalState
+from app.position_tracker import refresh_open_signals
 from app.scanner.bybit import get_all_candidates
 from app.scanner.smc import analyze_symbol
 
 
 def run_once():
+    with Session(engine) as session:
+        closed = refresh_open_signals(session)
+        if closed:
+            print(f"Closed out {closed} signal(s) that hit SL/TP3 since the last scan.")
+
     candidates = get_all_candidates()
     n_gainers = sum(1 for c in candidates if c["source"] == "top_gainer")
     n_impulsive = len(candidates) - n_gainers
