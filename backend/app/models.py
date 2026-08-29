@@ -57,6 +57,12 @@ class Signal(SQLModel, table=True):
     closed_at: Optional[datetime] = None
     closed_price: Optional[float] = None
 
+    # Updated every scan pass (whether or not the trade closes) so the app
+    # can show a real live-price marker on the position rail instead of a
+    # decorative one -- see app/position_tracker.py.
+    last_price: Optional[float] = None
+    last_checked_at: Optional[datetime] = None
+
 
 class SignalState(SQLModel, table=True):
     """Direct replacement for scanner_state.json -- dedup/phase tracking per
@@ -70,6 +76,15 @@ class SignalState(SQLModel, table=True):
     alerted_entry: float
     last_alert_ts: datetime = Field(default_factory=datetime.utcnow)
     last_signal_id: Optional[int] = Field(default=None, foreign_key="signal.id")
+
+
+class ScanRun(SQLModel, table=True):
+    """Singleton row (id always 1) recording when the most recent scan pass
+    started -- lets the app show a real "last scanned Xm ago" / countdown
+    instead of a client-side timer with no anchor to reality."""
+
+    id: Optional[int] = Field(default=1, primary_key=True)
+    started_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class DeviceToken(SQLModel, table=True):

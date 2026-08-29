@@ -9,7 +9,7 @@ from app.config import (
     SCAN_REQUEST_DELAY_SEC, TIMEFRAMES,
 )
 from app.db import engine
-from app.models import SignalState
+from app.models import ScanRun, SignalState
 from app.position_tracker import refresh_open_signals
 from app.scanner.bybit import get_all_candidates
 from app.scanner.smc import analyze_symbol
@@ -17,6 +17,11 @@ from app.scanner.smc import analyze_symbol
 
 def run_once():
     with Session(engine) as session:
+        run = session.get(ScanRun, 1) or ScanRun(id=1)
+        run.started_at = datetime.utcnow()
+        session.add(run)
+        session.commit()
+
         closed = refresh_open_signals(session)
         if closed:
             print(f"Closed out {closed} signal(s) that hit SL/TP3 since the last scan.")

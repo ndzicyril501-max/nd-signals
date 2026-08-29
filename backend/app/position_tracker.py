@@ -32,23 +32,29 @@ def refresh_open_signals(session: Session) -> int:
     price_by_symbol = {t["symbol"]: float(t["lastPrice"]) for t in tickers if "lastPrice" in t}
 
     closed = 0
+    now = datetime.utcnow()
     for signal in open_signals:
         price = price_by_symbol.get(signal.symbol)
         if price is None:
             continue  # symbol delisted or otherwise missing -- leave as active
 
+        # Recorded every pass regardless of outcome, so the app's position
+        # rail always has a real current price to place its live marker at.
+        signal.last_price = price
+        signal.last_checked_at = now
+
         if price >= signal.sl:
             signal.status = "hit_sl"
+            signal.closed_at = now
+            signal.closed_price = price
+            closed += 1
         elif price <= signal.tp3:
             signal.status = "hit_tp3"
-        else:
-            continue  # still active, nothing to update
+            signal.closed_at = now
+            signal.closed_price = price
+            closed += 1
 
-        signal.closed_at = datetime.utcnow()
-        signal.closed_price = price
         session.add(signal)
-        closed += 1
 
-    if closed:
-        session.commit()
+    session.commit()
     return closed

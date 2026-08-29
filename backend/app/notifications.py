@@ -6,14 +6,16 @@ from app.models import DeviceToken, Signal
 
 
 def _title_for(signal: Signal) -> str:
-    return f"\U0001F53B {signal.symbol} [{signal.timeframe}] — Score {signal.score}/10"
+    phase_label = "AT ENTRY" if signal.at_entry else "IN ZONE" if signal.in_zone else "NEAR ZONE"
+    return f"ND Signals — {phase_label}"
 
 
 def _body_for(signal: Signal) -> str:
-    status = ("Price at fib entry" if signal.at_entry else
-              "Price in entry zone" if signal.in_zone else
-              f"{signal.distance_pct:.1f}% below zone")
-    return f"{status} • R:R {signal.rr}:1 • Zone {signal.zone_low:g}-{signal.zone_high:g}"
+    status = ("price is at the fib entry" if signal.at_entry else
+              "price is inside the entry zone" if signal.in_zone else
+              f"{signal.distance_pct:.1f}% below the zone, waiting for the retrace")
+    return (f"{signal.symbol} {signal.timeframe} · score {signal.score}/10 · {status}. "
+            f"R:R {signal.rr}, SL {signal.sl:g}.")
 
 
 def send_expo_push(session: Session, signal: Signal) -> bool:

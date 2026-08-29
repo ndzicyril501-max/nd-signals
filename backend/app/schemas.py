@@ -17,6 +17,7 @@ class SignalListItem(BaseModel):
     created_at: datetime
     status: str
     closed_price: Optional[float] = None
+    last_price: Optional[float] = None
 
 
 class SignalDetail(BaseModel):
@@ -63,6 +64,8 @@ class SignalDetail(BaseModel):
     status: str
     closed_at: Optional[datetime] = None
     closed_price: Optional[float] = None
+    last_price: Optional[float] = None
+    last_checked_at: Optional[datetime] = None
 
     @classmethod
     def from_signal(cls, s: Signal) -> "SignalDetail":

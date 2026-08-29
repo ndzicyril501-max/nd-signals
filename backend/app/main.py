@@ -4,13 +4,14 @@ from fastapi import Depends, FastAPI
 
 from app.auth import require_api_key
 from app.db import init_db
-from app.routers import devices, signals
+from app.routers import devices, signals, stats
 from app.scan_loop import run_once
 from app.scanner.bybit import get_all_candidates, get_all_tickers
 
 app = FastAPI(title="SMC Scanner API")
 app.include_router(signals.router)
 app.include_router(devices.router)
+app.include_router(stats.router)
 
 # On Render's free tier the container can be paused between requests, so an
 # internal `while True: sleep(15min)` loop isn't reliable -- an external cron
