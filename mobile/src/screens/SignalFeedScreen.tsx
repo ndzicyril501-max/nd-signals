@@ -12,7 +12,6 @@ import PhaseChip from '../components/PhaseChip';
 import { PositionRailHorizontal } from '../components/PositionRail';
 import StatCard from '../components/StatCard';
 import ScanCountdown from '../components/ScanCountdown';
-import BrandFooter from '../components/BrandFooter';
 import { colors, fonts, radius, spacing } from '../theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Feed'>;
@@ -44,7 +43,7 @@ function Header({ activeCount }: { activeCount: number }) {
         </View>
         <View style={styles.headerTitleBlock}>
           <Text style={styles.headerTitle}>ND SIGNALS</Text>
-          <Text style={styles.headerSubtitle}>SMC SHORT SCANNER · BYBIT PERP</Text>
+          <Text style={styles.headerSubtitle}>SMC SHORT SCANNER</Text>
         </View>
         <ScanCountdown />
       </View>
@@ -245,7 +244,6 @@ export default function SignalFeedScreen({ navigation }: Props) {
         </ScrollView>
       )}
 
-      <BrandFooter />
     </View>
   );
 }

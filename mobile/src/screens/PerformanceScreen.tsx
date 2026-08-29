@@ -3,7 +3,6 @@ import Svg, { Defs, LinearGradient, Line, Polygon, Polyline, Stop } from 'react-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePerformance } from '../api/hooks';
 import StatCard from '../components/StatCard';
-import BrandFooter from '../components/BrandFooter';
 import { colors, fonts, radius, spacing } from '../theme';
 
 const CHART_W = 320;
@@ -131,8 +130,6 @@ export default function PerformanceScreen() {
             </View>
           </>
         )}
-
-        <BrandFooter />
       </ScrollView>
     </View>
   );

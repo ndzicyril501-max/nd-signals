@@ -10,6 +10,7 @@ import {
   JetBrainsMono_700Bold,
 } from '@expo-google-fonts/jetbrains-mono';
 import RootNavigator from './src/navigation/RootNavigator';
+import BrandFooter from './src/components/BrandFooter';
 import { registerForPushNotificationsAsync } from './src/notifications/registerForPushNotificationsAsync';
 import { setupNotificationTapHandling } from './src/notifications/notificationListener';
 import { colors } from './src/theme';
@@ -46,7 +47,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1, backgroundColor: colors.background }} onLayout={onLayoutRootView}>
-        <RootNavigator />
+        <View style={{ flex: 1 }}>
+          <RootNavigator />
+        </View>
+        <BrandFooter />
         <StatusBar style="light" />
       </View>
     </SafeAreaProvider>
