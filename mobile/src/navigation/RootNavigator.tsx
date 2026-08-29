@@ -2,6 +2,7 @@ import { DarkTheme, NavigationContainer, Theme, createNavigationContainerRef } f
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SignalFeedScreen from '../screens/SignalFeedScreen';
 import SignalDetailScreen from '../screens/SignalDetailScreen';
 import PerformanceScreen from '../screens/PerformanceScreen';
@@ -54,12 +55,19 @@ function SignalsStack() {
 export const navigationRef = createNavigationContainerRef<Record<string, object | undefined>>();
 
 export default function RootNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <NavigationContainer ref={navigationRef} theme={ndTheme}>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarStyle: { backgroundColor: colors.headerBg, borderTopColor: colors.border, height: 56, paddingBottom: 6 },
+          tabBarStyle: {
+            backgroundColor: colors.headerBg,
+            borderTopColor: colors.border,
+            height: 50 + insets.bottom,
+            paddingTop: 6,
+            paddingBottom: insets.bottom + 4,
+          },
           tabBarActiveTintColor: colors.gold,
           tabBarInactiveTintColor: colors.textQuaternary,
           tabBarLabelStyle: { fontFamily: fonts.monoBold, fontSize: 9, letterSpacing: 1 },
