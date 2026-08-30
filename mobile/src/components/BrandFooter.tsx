@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts, spacing } from '../theme';
+import { Colors, fonts, spacing, useTheme } from '../theme';
 
 // Rendered once, globally, below the entire tab navigator (see App.tsx) --
 // it's meant to be the literal last thing on screen, under the Signals/
@@ -8,6 +9,8 @@ import { colors, fonts, spacing } from '../theme';
 // the tab bar's background so the two read as one chrome block rather than
 // two mismatched bars stacked on top of each other.
 export default function BrandFooter() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   return (
     <View style={[styles.container, { paddingBottom: spacing.xs + insets.bottom }]}>
@@ -20,32 +23,34 @@ export default function BrandFooter() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: spacing.xs,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.headerBg,
-  },
-  mark: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    marginRight: spacing.sm,
-  },
-  name: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 10.5,
-    color: colors.textTertiary,
-  },
-  tagline: {
-    fontFamily: fonts.monoRegular,
-    fontSize: 8,
-    letterSpacing: 1.5,
-    color: colors.textQuaternary,
-    marginTop: 1,
-  },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: spacing.xs,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.headerBg,
+    },
+    mark: {
+      width: 18,
+      height: 18,
+      borderRadius: 4,
+      marginRight: spacing.sm,
+    },
+    name: {
+      fontFamily: fonts.sansMedium,
+      fontSize: 10.5,
+      color: colors.textTertiary,
+    },
+    tagline: {
+      fontFamily: fonts.monoRegular,
+      fontSize: 8,
+      letterSpacing: 1.5,
+      color: colors.textQuaternary,
+      marginTop: 1,
+    },
+  });
+}

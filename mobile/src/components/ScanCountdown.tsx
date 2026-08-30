@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import { useScanStatus } from '../api/hooks';
-import { colors, fonts } from '../theme';
+import { Colors, fonts, useTheme, withAlpha } from '../theme';
 
 // Matches the cron-job.org schedule set up for this backend (see README).
 // If that schedule ever changes, this is the one place to update it.
@@ -35,6 +35,8 @@ function formatMmSs(secs: number): string {
 }
 
 export default function ScanCountdown() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data } = useScanStatus();
   const secsLeft = useCountdown(data?.last_started_at);
   const pulse = useRef(new Animated.Value(1)).current;
@@ -60,17 +62,19 @@ export default function ScanCountdown() {
   );
 }
 
-const styles = StyleSheet.create({
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(201,162,74,0.32)',
-  },
-  dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.gold },
-  label: { fontFamily: fonts.monoBold, fontSize: 9.5, letterSpacing: 1, color: colors.gold },
-});
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: withAlpha(colors.accent, 0.32),
+    },
+    dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.accent },
+    label: { fontFamily: fonts.monoBold, fontSize: 9.5, letterSpacing: 1, color: colors.accent },
+  });
+}

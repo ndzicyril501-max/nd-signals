@@ -14,12 +14,11 @@ TP1_PCT = 0.30
 TP2_PCT = 0.60
 SCAN_INTERVAL_SEC = 15 * 60
 
-# Lowered from the original 9 -- the user wants 8/10+ setups surfaced too. At 8,
-# a setup can now qualify either the original way ("price at zone" + one more
-# flag) or via all three 1-point flags without price at the zone yet. Still
-# bounded by NEAR_ENTRY_PCT below, so it doesn't reopen the noise the LuxAlgo
-# port was built to filter out.
-MIN_ALERT_SCORE = int(os.environ.get("MIN_ALERT_SCORE", "8"))
+# Raised back to 9 -- the user found 8/10 setups too noisy and wants only the
+# top band surfaced. At 9, the "price at zone (+2)" flag becomes mandatory
+# (5 + two 1-point flags only reaches 8), so every alert reflects price
+# actually being at the zone plus real additional confluence.
+MIN_ALERT_SCORE = int(os.environ.get("MIN_ALERT_SCORE", "9"))
 
 ENTRY_MODE = "ob_mean_threshold"
 OB_FIB_RATIO = 0.5

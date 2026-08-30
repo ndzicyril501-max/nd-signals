@@ -13,9 +13,23 @@ import RootNavigator from './src/navigation/RootNavigator';
 import BrandFooter from './src/components/BrandFooter';
 import { registerForPushNotificationsAsync } from './src/notifications/registerForPushNotificationsAsync';
 import { setupNotificationTapHandling } from './src/notifications/notificationListener';
-import { colors } from './src/theme';
+import { ThemeProvider, useTheme } from './src/theme';
 
 SplashScreen.preventAutoHideAsync();
+
+function AppShell({ onLayoutRootView }: { onLayoutRootView: () => void }) {
+  const { colors, resolvedMode } = useTheme();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background }} onLayout={onLayoutRootView}>
+      <View style={{ flex: 1 }}>
+        <RootNavigator />
+      </View>
+      <BrandFooter />
+      <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} />
+    </View>
+  );
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -46,13 +60,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: colors.background }} onLayout={onLayoutRootView}>
-        <View style={{ flex: 1 }}>
-          <RootNavigator />
-        </View>
-        <BrandFooter />
-        <StatusBar style="light" />
-      </View>
+      <ThemeProvider>
+        <AppShell onLayoutRootView={onLayoutRootView} />
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

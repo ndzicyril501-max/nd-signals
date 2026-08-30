@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { DarkTheme, NavigationContainer, Theme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -5,7 +6,8 @@ import { Text } from 'react-native';
 import SignalFeedScreen from '../screens/SignalFeedScreen';
 import SignalDetailScreen from '../screens/SignalDetailScreen';
 import PerformanceScreen from '../screens/PerformanceScreen';
-import { colors, fonts } from '../theme';
+import SettingsScreen from '../screens/SettingsScreen';
+import { useTheme, fonts } from '../theme';
 
 export type SignalsStackParamList = {
   Feed: undefined;
@@ -15,6 +17,7 @@ export type SignalsStackParamList = {
 export type RootTabParamList = {
   Signals: undefined;
   Performance: undefined;
+  Settings: undefined;
 };
 
 // Kept as the type other files (push-notification deep link) navigate
@@ -23,19 +26,6 @@ export type RootStackParamList = SignalsStackParamList;
 
 const Stack = createNativeStackNavigator<SignalsStackParamList>();
 const Tab = createBottomTabNavigator<RootTabParamList>();
-
-const ndTheme: Theme = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: colors.gold,
-    background: colors.background,
-    card: colors.surface,
-    text: colors.textPrimary,
-    border: colors.border,
-    notification: colors.gold,
-  },
-};
 
 function SignalsStack() {
   return (
@@ -54,6 +44,24 @@ function SignalsStack() {
 export const navigationRef = createNavigationContainerRef<Record<string, object | undefined>>();
 
 export default function RootNavigator() {
+  const { colors } = useTheme();
+
+  const ndTheme: Theme = useMemo(
+    () => ({
+      ...DarkTheme,
+      colors: {
+        ...DarkTheme.colors,
+        primary: colors.accent,
+        background: colors.background,
+        card: colors.surface,
+        text: colors.textPrimary,
+        border: colors.border,
+        notification: colors.accent,
+      },
+    }),
+    [colors]
+  );
+
   return (
     <NavigationContainer ref={navigationRef} theme={ndTheme}>
       <Tab.Navigator
@@ -69,7 +77,7 @@ export default function RootNavigator() {
             paddingTop: 6,
             paddingBottom: 4,
           },
-          tabBarActiveTintColor: colors.gold,
+          tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.textQuaternary,
           tabBarLabelStyle: { fontFamily: fonts.monoBold, fontSize: 9, letterSpacing: 1 },
         }}
@@ -88,6 +96,14 @@ export default function RootNavigator() {
           options={{
             tabBarLabel: 'PERFORMANCE',
             tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 15 }}>◱</Text>,
+          }}
+        />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            tabBarLabel: 'SETTINGS',
+            tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 15 }}>◐</Text>,
           }}
         />
       </Tab.Navigator>

@@ -1,9 +1,10 @@
+import { useId, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Line, Polygon, Polyline, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePerformance } from '../api/hooks';
 import StatCard from '../components/StatCard';
-import { colors, fonts, radius, spacing } from '../theme';
+import { Colors, fonts, radius, spacing, useTheme, withAlpha } from '../theme';
 
 const CHART_W = 320;
 const CHART_H = 112;
@@ -11,6 +12,10 @@ const PAD_TOP = 8;
 const PAD_BOTTOM = 8;
 
 function EquityChart({ points }: { points: { closed_at: string; cumulative_r: number }[] }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const gradientId = useId();
+
   if (points.length < 2) {
     return (
       <View style={[styles.chartPlaceholder, { height: CHART_H }]}>
@@ -37,22 +42,24 @@ function EquityChart({ points }: { points: { closed_at: string; cumulative_r: nu
   return (
     <Svg width="100%" height={CHART_H} viewBox={`0 0 ${CHART_W} ${CHART_H}`}>
       <Defs>
-        <LinearGradient id="equityFill" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={colors.gold} stopOpacity={0.22} />
-          <Stop offset="1" stopColor={colors.gold} stopOpacity={0} />
+        <LinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={colors.accent} stopOpacity={0.22} />
+          <Stop offset="1" stopColor={colors.accent} stopOpacity={0} />
         </LinearGradient>
       </Defs>
       {gridLines.map((y) => (
-        <Line key={y} x1={0} y1={y} x2={CHART_W} y2={y} stroke="#232634" strokeWidth={1} />
+        <Line key={y} x1={0} y1={y} x2={CHART_W} y2={y} stroke={colors.surfaceElevated} strokeWidth={1} />
       ))}
-      <Polygon points={fillStr} fill="url(#equityFill)" />
-      <Polyline points={lineStr} fill="none" stroke={colors.gold} strokeWidth={1.8} strokeLinejoin="round" />
+      <Polygon points={fillStr} fill={`url(#${gradientId})`} />
+      <Polyline points={lineStr} fill="none" stroke={colors.accent} strokeWidth={1.8} strokeLinejoin="round" />
     </Svg>
   );
 }
 
 function ScoreBar({ score, n, winPct }: { score: number; n: number; winPct: number }) {
-  const color = winPct >= 70 ? colors.gold : winPct >= 50 ? colors.goldMuted : colors.goldDim;
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const color = winPct >= 70 ? colors.accent : winPct >= 50 ? colors.accentMuted : colors.accentDim;
   return (
     <View style={styles.scoreBarRow}>
       <Text style={styles.scoreBarLabel}>{score}/10</Text>
@@ -65,6 +72,8 @@ function ScoreBar({ score, n, winPct }: { score: number; n: number; winPct: numb
 }
 
 export default function PerformanceScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: perf, loading } = usePerformance();
   const insets = useSafeAreaInsets();
 
@@ -121,7 +130,7 @@ export default function PerformanceScreen() {
                     <Text style={[styles.tfCell, styles.tfCellTf, { flex: 1 }]}>{t.timeframe}</Text>
                     <Text style={[styles.tfCell, styles.tfColN]}>{t.n}</Text>
                     <Text style={[styles.tfCell, styles.tfColWin]}>{t.win_pct.toFixed(0)}%</Text>
-                    <Text style={[styles.tfCell, styles.tfColNet, { color: t.net_r >= 0 ? colors.gold : colors.danger }]}>
+                    <Text style={[styles.tfCell, styles.tfColNet, { color: t.net_r >= 0 ? colors.accent : colors.danger }]}>
                       {t.net_r >= 0 ? '+' : ''}{t.net_r.toFixed(1)}
                     </Text>
                   </View>
@@ -135,45 +144,47 @@ export default function PerformanceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    paddingHorizontal: spacing.md, paddingTop: 14, paddingBottom: 12,
-    borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.headerBg,
-  },
-  headerTitle: { fontFamily: fonts.sansSemiBold, fontSize: 13, letterSpacing: 2, color: colors.textPrimary },
-  headerSubtitle: { fontFamily: fonts.monoRegular, fontSize: 9, letterSpacing: 1.5, color: colors.textQuaternary, marginTop: 2 },
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      paddingHorizontal: spacing.md, paddingTop: 14, paddingBottom: 12,
+      borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.headerBg,
+    },
+    headerTitle: { fontFamily: fonts.sansSemiBold, fontSize: 13, letterSpacing: 2, color: colors.textPrimary },
+    headerSubtitle: { fontFamily: fonts.monoRegular, fontSize: 9, letterSpacing: 1.5, color: colors.textQuaternary, marginTop: 2 },
 
-  body: { flex: 1 },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
+    body: { flex: 1 },
+    content: { padding: spacing.md, paddingBottom: spacing.xl },
 
-  sectionKicker: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 2, color: colors.gold },
-  sectionTitle: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 2, color: colors.gold, marginBottom: spacing.sm },
+    sectionKicker: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 2, color: colors.accent },
+    sectionTitle: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 2, color: colors.accent, marginBottom: spacing.sm },
 
-  card: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
-    padding: 14, marginBottom: spacing.md,
-  },
-  equityHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing.sm },
-  equityValue: { fontFamily: fonts.monoBold, fontSize: 13, color: colors.gold },
+    card: {
+      borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
+      padding: 14, marginBottom: spacing.md,
+    },
+    equityHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing.sm },
+    equityValue: { fontFamily: fonts.monoBold, fontSize: 13, color: colors.accent },
 
-  statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+    statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
 
-  scoreBarRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
-  scoreBarLabel: { width: 44, fontFamily: fonts.monoRegular, fontSize: 11, color: colors.textSecondary },
-  scoreBarTrack: { flex: 1, height: 10, backgroundColor: '#232634', borderRadius: 2, overflow: 'hidden' },
-  scoreBarFill: { height: '100%' },
-  scoreBarPct: { width: 60, textAlign: 'right', fontFamily: fonts.monoRegular, fontSize: 11, color: colors.textPrimary },
+    scoreBarRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 5 },
+    scoreBarLabel: { width: 44, fontFamily: fonts.monoRegular, fontSize: 11, color: colors.textSecondary },
+    scoreBarTrack: { flex: 1, height: 10, backgroundColor: colors.surfaceElevated, borderRadius: 2, overflow: 'hidden' },
+    scoreBarFill: { height: '100%' },
+    scoreBarPct: { width: 60, textAlign: 'right', fontFamily: fonts.monoRegular, fontSize: 11, color: colors.textPrimary },
 
-  tfHeaderRow: { flexDirection: 'row', padding: 10, backgroundColor: colors.surfaceElevated },
-  tfHeaderCell: { fontFamily: fonts.monoRegular, fontSize: 9, letterSpacing: 1, color: colors.textQuaternary },
-  tfRow: { flexDirection: 'row', padding: 10, borderTopWidth: 1, borderTopColor: 'rgba(46,51,80,0.6)' },
-  tfCell: { fontFamily: fonts.monoRegular, fontSize: 11.5, color: colors.iconGray },
-  tfCellTf: { fontFamily: fonts.monoBold, color: colors.textPrimary },
-  tfColN: { width: 44, textAlign: 'right' },
-  tfColWin: { width: 54, textAlign: 'right' },
-  tfColNet: { width: 58, textAlign: 'right', fontFamily: fonts.monoBold },
+    tfHeaderRow: { flexDirection: 'row', padding: 10, backgroundColor: colors.surfaceElevated },
+    tfHeaderCell: { fontFamily: fonts.monoRegular, fontSize: 9, letterSpacing: 1, color: colors.textQuaternary },
+    tfRow: { flexDirection: 'row', padding: 10, borderTopWidth: 1, borderTopColor: withAlpha(colors.border, 0.6) },
+    tfCell: { fontFamily: fonts.monoRegular, fontSize: 11.5, color: colors.iconGray },
+    tfCellTf: { fontFamily: fonts.monoBold, color: colors.textPrimary },
+    tfColN: { width: 44, textAlign: 'right' },
+    tfColWin: { width: 54, textAlign: 'right' },
+    tfColNet: { width: 58, textAlign: 'right', fontFamily: fonts.monoBold },
 
-  chartPlaceholder: { alignItems: 'center', justifyContent: 'center' },
-  emptyText: { fontFamily: fonts.sans, color: colors.textSecondary, textAlign: 'center' },
-});
+    chartPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+    emptyText: { fontFamily: fonts.sans, color: colors.textSecondary, textAlign: 'center' },
+  });
+}

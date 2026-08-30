@@ -1,11 +1,12 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SignalsStackParamList } from '../navigation/RootNavigator';
 import { useSignalDetail } from '../api/hooks';
 import PhaseChip from '../components/PhaseChip';
-import { PositionRailVertical } from '../components/PositionRail';
-import { colors, fonts, radius, spacing } from '../theme';
+import PositionGauge from '../components/PositionGauge';
+import { Colors, fonts, radius, spacing, useTheme, withAlpha } from '../theme';
 
 type Props = NativeStackScreenProps<SignalsStackParamList, 'Detail'>;
 
@@ -32,6 +33,8 @@ function splitFlagLabel(name: string): { label: string; pts: string | null } {
 }
 
 function Row({ label, value }: { label: string; value: string | number }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.dataRow}>
       <Text style={styles.dataLabel}>{label}</Text>
@@ -41,6 +44,8 @@ function Row({ label, value }: { label: string; value: string | number }) {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -50,6 +55,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function SignalDetailScreen({ route, navigation }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { signalId } = route.params;
   const { data: s, loading, error } = useSignalDetail(signalId);
   const insets = useSafeAreaInsets();
@@ -81,7 +88,7 @@ export default function SignalDetailScreen({ route, navigation }: Props) {
 
       {loading && (
         <View style={styles.centered}>
-          <ActivityIndicator color={colors.gold} />
+          <ActivityIndicator color={colors.accent} />
         </View>
       )}
       {error && !loading && (
@@ -95,16 +102,17 @@ export default function SignalDetailScreen({ route, navigation }: Props) {
           {(() => {
             const { text, tone } = statusText(s);
             return (
-              <View style={[styles.statusBanner, tone !== 'active' && { borderColor: tone === 'win' ? colors.gold : colors.danger }]}>
-                <View style={[styles.statusDot, { backgroundColor: tone === 'loss' ? colors.danger : colors.gold }]} />
+              <View style={[styles.statusBanner, tone !== 'active' && { borderColor: tone === 'win' ? colors.accent : colors.danger }]}>
+                <View style={[styles.statusDot, { backgroundColor: tone === 'loss' ? colors.danger : colors.accent }]} />
                 <Text style={styles.statusText}>{text}</Text>
               </View>
             );
           })()}
 
-          <Text style={styles.sectionTitle}>POSITION RAIL</Text>
+          <Text style={styles.sectionTitle}>POSITION GAUGE</Text>
           <View style={styles.railCard}>
-            <PositionRailVertical
+            <PositionGauge
+              variant="detailed"
               sl={s.sl}
               entry={s.entry}
               tp1={s.tp1}
@@ -134,7 +142,7 @@ export default function SignalDetailScreen({ route, navigation }: Props) {
                 const { label, pts } = splitFlagLabel(name);
                 return (
                   <View key={name} style={styles.flagRow}>
-                    <Text style={[styles.flagMark, { color: earned ? colors.gold : colors.textQuaternary }]}>
+                    <Text style={[styles.flagMark, { color: earned ? colors.accent : colors.textQuaternary }]}>
                       {earned ? '✓' : '—'}
                     </Text>
                     <Text style={[styles.flagLabel, { color: earned ? colors.iconGray : colors.textTertiary }]}>{label}</Text>
@@ -170,72 +178,74 @@ export default function SignalDetailScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  error: { color: colors.danger },
+function createStyles(colors: Colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    error: { color: colors.danger },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: spacing.md,
-    paddingTop: 14,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.headerBg,
-  },
-  backButton: {
-    width: 30, height: 30, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  backButtonText: { color: colors.gold, fontSize: 15 },
-  headerTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  headerSymbol: { fontFamily: fonts.monoBold, fontSize: 19, letterSpacing: -0.4, color: colors.textPrimary },
-  headerMeta: { fontFamily: fonts.monoRegular, fontSize: 10.5, letterSpacing: 1, color: colors.textQuaternary, marginTop: 3 },
-  headerScore: { fontFamily: fonts.monoBold, fontSize: 17, color: colors.gold },
-  headerScoreLabel: { fontFamily: fonts.monoRegular, fontSize: 9, letterSpacing: 1, color: colors.textQuaternary },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingHorizontal: spacing.md,
+      paddingTop: 14,
+      paddingBottom: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.headerBg,
+    },
+    backButton: {
+      width: 30, height: 30, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    backButtonText: { color: colors.accent, fontSize: 15 },
+    headerTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
+    headerSymbol: { fontFamily: fonts.monoBold, fontSize: 19, letterSpacing: -0.4, color: colors.textPrimary },
+    headerMeta: { fontFamily: fonts.monoRegular, fontSize: 10.5, letterSpacing: 1, color: colors.textQuaternary, marginTop: 3 },
+    headerScore: { fontFamily: fonts.monoBold, fontSize: 17, color: colors.accent },
+    headerScoreLabel: { fontFamily: fonts.monoRegular, fontSize: 9, letterSpacing: 1, color: colors.textQuaternary },
 
-  body: { flex: 1 },
-  content: { padding: spacing.md, paddingBottom: spacing.xl },
+    body: { flex: 1 },
+    content: { padding: spacing.md, paddingBottom: spacing.xl },
 
-  statusBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    padding: 11, borderRadius: radius.sm, marginBottom: spacing.md,
-    backgroundColor: 'rgba(201,162,74,0.09)', borderWidth: 1, borderColor: 'rgba(201,162,74,0.3)',
-  },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 12.5, color: colors.goldBright },
+    statusBanner: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      padding: 11, borderRadius: radius.sm, marginBottom: spacing.md,
+      backgroundColor: withAlpha(colors.accent, 0.09), borderWidth: 1, borderColor: withAlpha(colors.accent, 0.3),
+    },
+    statusDot: { width: 6, height: 6, borderRadius: 3 },
+    statusText: { flex: 1, fontFamily: fonts.sansMedium, fontSize: 12.5, color: colors.accentBright },
 
-  sectionTitle: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 2, color: colors.gold, marginBottom: 10 },
-  section: { marginBottom: spacing.lg },
-  railCard: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
-    padding: 14, marginBottom: spacing.lg,
-  },
-  card: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-  },
-  dataRow: { flexDirection: 'row', paddingVertical: 5, gap: spacing.sm },
-  dataLabel: { flexShrink: 0, maxWidth: '42%', fontFamily: fonts.sans, color: colors.textSecondary, fontSize: 13 },
-  dataValue: { flex: 1, fontFamily: fonts.mono, fontSize: 12.5, color: colors.textPrimary, textAlign: 'right' },
+    sectionTitle: { fontFamily: fonts.monoBold, fontSize: 10, letterSpacing: 2, color: colors.accent, marginBottom: 10 },
+    section: { marginBottom: spacing.lg },
+    railCard: {
+      borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
+      paddingHorizontal: 14, paddingBottom: 14, paddingTop: 28, marginBottom: spacing.lg,
+    },
+    card: {
+      borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface,
+      paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    },
+    dataRow: { flexDirection: 'row', paddingVertical: 5, gap: spacing.sm },
+    dataLabel: { flexShrink: 0, maxWidth: '42%', fontFamily: fonts.sans, color: colors.textSecondary, fontSize: 13 },
+    dataValue: { flex: 1, fontFamily: fonts.mono, fontSize: 12.5, color: colors.textPrimary, textAlign: 'right' },
 
-  flagRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
-  flagMark: { fontFamily: fonts.monoBold, fontSize: 12, width: 12 },
-  flagLabel: { flex: 1, fontFamily: fonts.sans, fontSize: 12.5 },
-  flagPts: { fontFamily: fonts.mono, fontSize: 11, color: colors.textQuaternary },
+    flagRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 },
+    flagMark: { fontFamily: fonts.monoBold, fontSize: 12, width: 12 },
+    flagLabel: { flex: 1, fontFamily: fonts.sans, fontSize: 12.5 },
+    flagPts: { fontFamily: fonts.mono, fontSize: 11, color: colors.textQuaternary },
 
-  fibRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
-  fibRatio: { width: 44, fontFamily: fonts.monoRegular, fontSize: 11, color: colors.textQuaternary },
-  fibTrack: { flex: 1, height: 2, backgroundColor: colors.border, overflow: 'hidden' },
-  fibFill: { height: '100%', backgroundColor: colors.goldDim },
-  fibPrice: { fontFamily: fonts.monoRegular, fontSize: 11.5, color: colors.textPrimary },
+    fibRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+    fibRatio: { width: 44, fontFamily: fonts.monoRegular, fontSize: 11, color: colors.textQuaternary },
+    fibTrack: { flex: 1, height: 2, backgroundColor: colors.border, overflow: 'hidden' },
+    fibFill: { height: '100%', backgroundColor: withAlpha(colors.accent, 0.35) },
+    fibPrice: { fontFamily: fonts.monoRegular, fontSize: 11.5, color: colors.textPrimary },
 
-  chartButton: {
-    borderWidth: 1, borderColor: colors.gold, borderRadius: radius.md,
-    paddingVertical: 12, alignItems: 'center', marginTop: spacing.sm,
-  },
-  chartButtonText: { fontFamily: fonts.sansMedium, color: colors.gold, fontSize: 12.5 },
-});
+    chartButton: {
+      borderWidth: 1, borderColor: colors.accent, borderRadius: radius.md,
+      paddingVertical: 12, alignItems: 'center', marginTop: spacing.sm,
+    },
+    chartButtonText: { fontFamily: fonts.sansMedium, color: colors.accent, fontSize: 12.5 },
+  });
+}

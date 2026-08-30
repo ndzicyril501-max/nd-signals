@@ -1,8 +1,12 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { fonts, radius, scoreTier } from '../theme';
+import { Colors, fonts, radius, scoreTier, useTheme } from '../theme';
 
 export default function ScoreBadge({ score }: { score: number }) {
-  const tier = scoreTier(score);
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const tier = scoreTier(score, colors);
+  const neutralFg = scoreTier(7, colors).fg;
   return (
     <View
       style={[
@@ -17,26 +21,28 @@ export default function ScoreBadge({ score }: { score: number }) {
       ]}
     >
       <Text style={[styles.score, { color: tier.fg }]}>{score}</Text>
-      <Text style={[styles.suffix, { color: tier.fg === scoreTier(7).fg ? tier.fg : '#8a7038' }]}>/10</Text>
+      <Text style={[styles.suffix, { color: tier.fg === neutralFg ? tier.fg : colors.accentMuted }]}>/10</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderRadius: radius.lg,
-    paddingVertical: 3,
-  },
-  score: {
-    fontFamily: fonts.monoBold,
-    fontSize: 13,
-  },
-  suffix: {
-    fontFamily: fonts.monoRegular,
-    fontSize: 10,
-  },
-});
+function createStyles(_colors: Colors) {
+  return StyleSheet.create({
+    badge: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      paddingHorizontal: 8,
+      borderWidth: 1,
+      borderRadius: radius.lg,
+      paddingVertical: 3,
+    },
+    score: {
+      fontFamily: fonts.monoBold,
+      fontSize: 13,
+    },
+    suffix: {
+      fontFamily: fonts.monoRegular,
+      fontSize: 10,
+    },
+  });
+}
