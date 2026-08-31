@@ -9,17 +9,10 @@ from app.config import (
     SCAN_REQUEST_DELAY_SEC, TIMEFRAMES,
 )
 from app.db import engine
-from app.models import ScanRun, Signal, SignalState
+from app.models import ScanRun, SignalState
 from app.position_tracker import refresh_open_signals
 from app.scanner.bybit import get_all_candidates
 from app.scanner.smc import analyze_symbol
-
-# Monotonic -- a signal's tracked phase only ever advances (near -> in_zone ->
-# at_entry), never regresses, even if price drifts back out of the zone. This
-# is what makes "notify only on the transition into at_entry" well-defined:
-# without monotonicity, a signal bouncing near <-> in_zone <-> near could
-# re-trigger the same transition repeatedly.
-PHASE_RANK = {"near": 0, "in_zone": 1, "at_entry": 2}
 
 
 def run_once():
@@ -50,7 +43,6 @@ def run_once():
         "low_score": 0,         # valid setup, but below MIN_ALERT_SCORE
         "too_far": 0,           # valid + high score, but price not near entry yet
         "duplicate": 0,         # already alerted this exact zone, not re-tapping
-        "phase_updated": 0,     # advanced a phase (e.g. near -> in_zone) -- updated silently, no push
         "alerted": 0,
         "errors": 0,
     }
@@ -114,49 +106,17 @@ def run_once():
                     time.sleep(SCAN_REQUEST_DELAY_SEC)
                     continue  # valid setup, but still too far from entry to be actionable right now
 
-                # Signals get exactly one notification when first detected (at
-                # whatever phase), and at most one more when they specifically
-                # reach the fib entry -- nothing for intermediate advances like
-                # near -> in_zone, and nothing at all once a phase has already
-                # been reached (PHASE_RANK is monotonic, see module docstring).
                 phase = "at_entry" if at_entry else ("in_zone" if in_zone else "near")
                 same_zone = already and already.zone_low == zlo and already.zone_high == zhi
+                if same_zone and already.phase == phase:
+                    funnel["duplicate"] += 1
+                    time.sleep(SCAN_REQUEST_DELAY_SEC)
+                    continue
 
-                if same_zone:
-                    if PHASE_RANK[phase] <= PHASE_RANK[already.phase]:
-                        funnel["duplicate"] += 1
-                        time.sleep(SCAN_REQUEST_DELAY_SEC)
-                        continue  # no advance -- same phase, or price drifted back
-
-                    should_notify = phase == "at_entry"
-                    existing_signal = session.get(Signal, already.last_signal_id) if already.last_signal_id else None
-                    signal, ok = persist_and_notify(session, g, setup, at_entry, in_zone, distance_pct, phase,
-                                                     existing_signal=existing_signal, should_notify=should_notify)
-                    if should_notify and not ok:
-                        # Do NOT advance phase -- a failed send must not mute
-                        # this entry until the next scan retries it.
-                        funnel["errors"] += 1
-                        time.sleep(SCAN_REQUEST_DELAY_SEC)
-                        continue
-
-                    already.phase = phase
-                    already.last_alert_ts = datetime.utcnow()
-                    session.add(already)
-                    session.commit()
-                    if should_notify:
-                        funnel["alerted"] += 1
-                        print(f"  {symbol} [{tf_label}]: FIB ENTRY UPDATE (id {signal.id}, "
-                              f"score {setup['score']}/10, R:R {setup['rr']})")
-                    else:
-                        funnel["phase_updated"] += 1
-                else:
-                    # Brand-new zone for this key -- either the first time ever, or
-                    # the old OB was replaced by a new one. Always notify, whatever
-                    # phase it starts at (a fresh signal that opens already at_entry
-                    # still only gets this one notification, not a second "update").
-                    signal, ok = persist_and_notify(session, g, setup, at_entry, in_zone, distance_pct, phase,
-                                                     existing_signal=None, should_notify=True)
-                    if ok:
+                if in_zone or at_entry or not already:
+                    signal, notified = persist_and_notify(session, g, setup, at_entry, in_zone,
+                                                            distance_pct, phase)
+                    if notified:
                         funnel["alerted"] += 1
                         state_row = already or SignalState(key=key, zone_low=zlo, zone_high=zhi,
                                                             phase=phase, alerted_entry=entry)
@@ -170,12 +130,13 @@ def run_once():
                         session.commit()
                         where = ("AT FIB ENTRY" if at_entry else
                                  "IN ZONE" if in_zone else f"{distance_pct:.1f}% below zone")
-                        print(f"  {symbol} [{tf_label}]: NEW SIGNAL (score {setup['score']}/10, "
+                        print(f"  {symbol} [{tf_label}]: ALERT SENT (score {setup['score']}/10, "
                               f"R:R {setup['rr']}, zone {zlo}-{zhi}, entry {entry}, {where})")
                     else:
-                        # Do NOT record it as alerted -- a failed send must not
-                        # mute this entry until the next scan retries it.
                         funnel["errors"] += 1
+                else:
+                    funnel["duplicate"] += 1
+                    print(f"  {symbol} [{tf_label}]: setup exists but price not in zone, skipping")
 
                 if checks_done % 50 == 0:
                     print(f"  ...{checks_done}/{total_checks} symbol/timeframe checks done so far")
@@ -188,7 +149,6 @@ def run_once():
           f"{funnel['low_score']} below score {MIN_ALERT_SCORE}, "
           f"{funnel['too_far']} too far from entry, "
           f"{funnel['duplicate']} duplicate/already known, "
-          f"{funnel['phase_updated']} phase advanced silently (no push), "
           f"{funnel['errors']} errors, "
           f"{funnel['alerted']} ALERTED")
 

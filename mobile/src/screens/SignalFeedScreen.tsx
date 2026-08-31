@@ -25,10 +25,10 @@ interface Props {
   rightPane?: ReactNode;
 }
 
-// Only 9/10+ setups are surfaced -- see backend/app/config.py's
+// Only 10/10 setups are surfaced -- see backend/app/config.py's
 // MIN_ALERT_SCORE, which gates alerting itself; this is the mobile-side
 // mirror of that intent, not just a display filter.
-const MIN_SCORE = 9;
+const MIN_SCORE = 10;
 
 function relativeTime(iso: string): string {
   const diffMs = Date.now() - new Date(iso + 'Z').getTime();
