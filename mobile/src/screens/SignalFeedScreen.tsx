@@ -1,9 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RootStackParamList } from '../navigation/RootNavigator';
 import { useSignals, useStatsSummary, usePerformance } from '../api/hooks';
 import { SignalListItem } from '../types/signal';
 import { ClosedLogEntry } from '../types/stats';
@@ -14,8 +12,18 @@ import StatCard from '../components/StatCard';
 import ScanCountdown from '../components/ScanCountdown';
 import { Colors, fonts, radius, spacing, useTheme, withAlpha } from '../theme';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Feed'>;
 type Tab = 'active' | 'done';
+
+interface Props {
+  onSelectSignal: (signalId: number) => void;
+  // Web split-view only: which row (if any) is currently shown in the
+  // adjoining detail pane, so the list can highlight it.
+  selectedSignalId?: number | null;
+  // Web split-view only: renders the list in a fixed-width left pane next to
+  // this content instead of taking the full width (mobile has no such pane
+  // -- it navigates to a full-screen detail route instead).
+  rightPane?: ReactNode;
+}
 
 // Only 9/10+ setups are surfaced -- see backend/app/config.py's
 // MIN_ALERT_SCORE, which gates alerting itself; this is the mobile-side
@@ -97,13 +105,13 @@ function TabSwitcher({ tab, onChange, activeCount, doneCount }: { tab: Tab; onCh
   );
 }
 
-function ActiveCard({ item, onPress }: { item: SignalListItem; onPress: () => void }) {
+function ActiveCard({ item, onPress, selected }: { item: SignalListItem; onPress: () => void; selected?: boolean }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const pct = unrealizedPct(item.entry, item.last_price);
   return (
     <TouchableOpacity
-      style={[styles.card, item.phase === 'at_entry' && styles.cardHighlighted]}
+      style={[styles.card, (item.phase === 'at_entry' || selected) && styles.cardHighlighted, selected && styles.cardSelected]}
       activeOpacity={0.8}
       onPress={onPress}
     >
@@ -184,12 +192,12 @@ function DoneSummary() {
   );
 }
 
-function ClosedRow({ item, onPress }: { item: ClosedLogEntry; onPress: () => void }) {
+function ClosedRow({ item, onPress, selected }: { item: ClosedLogEntry; onPress: () => void; selected?: boolean }) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const color = item.outcome === 'TARGET' ? colors.accent : colors.danger;
   return (
-    <TouchableOpacity style={styles.closedRow} activeOpacity={0.7} onPress={onPress}>
+    <TouchableOpacity style={[styles.closedRow, selected && styles.closedRowSelected]} activeOpacity={0.7} onPress={onPress}>
       <View style={[styles.closedBar, { backgroundColor: color }]} />
       <View style={{ flex: 1 }}>
         <Text style={styles.closedSymbol}>{item.symbol}</Text>
@@ -205,7 +213,7 @@ function ClosedRow({ item, onPress }: { item: ClosedLogEntry; onPress: () => voi
   );
 }
 
-export default function SignalFeedScreen({ navigation }: Props) {
+export default function SignalFeedScreen({ onSelectSignal, selectedSignalId, rightPane }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [tab, setTab] = useState<Tab>('active');
@@ -225,6 +233,36 @@ export default function SignalFeedScreen({ navigation }: Props) {
   const activeCount = activeData?.length ?? 0;
   const doneCount = doneData?.length ?? 0;
 
+  const list = tab === 'active' ? (
+    <FlatList
+      style={styles.list}
+      contentContainerStyle={styles.listContent}
+      data={activeData ?? []}
+      keyExtractor={(item) => String(item.id)}
+      renderItem={({ item }) => (
+        <ActiveCard item={item} selected={item.id === selectedSignalId} onPress={() => onSelectSignal(item.id)} />
+      )}
+      ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor={colors.accent} colors={[colors.accent]} />}
+      ListEmptyComponent={
+        !loading ? <Text style={styles.empty}>No active signals yet. The scanner checks periodically.</Text> : null
+      }
+    />
+  ) : (
+    <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+      <DoneSummary />
+      {perf && perf.closed_log.length > 0 && (
+        <View style={styles.closedLogCard}>
+          <Text style={[styles.sectionKicker, { marginBottom: spacing.sm }]}>CLOSED LOG</Text>
+          {perf.closed_log.map((item) => (
+            <ClosedRow key={item.id} item={item} selected={item.id === selectedSignalId} onPress={() => onSelectSignal(item.id)} />
+          ))}
+        </View>
+      )}
+      {(!perf || perf.closed_log.length === 0) && <Text style={styles.empty}>No closed trades yet.</Text>}
+    </ScrollView>
+  );
+
   return (
     <View style={styles.container}>
       <Header activeCount={activeCount} />
@@ -232,36 +270,14 @@ export default function SignalFeedScreen({ navigation }: Props) {
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {tab === 'active' ? (
-        <FlatList
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
-          data={activeData ?? []}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => (
-            <ActiveCard item={item} onPress={() => navigation.navigate('Detail', { signalId: item.id })} />
-          )}
-          ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
-          refreshControl={<RefreshControl refreshing={loading} onRefresh={refetch} tintColor={colors.accent} colors={[colors.accent]} />}
-          ListEmptyComponent={
-            !loading ? <Text style={styles.empty}>No active signals yet. The scanner checks periodically.</Text> : null
-          }
-        />
+      {rightPane ? (
+        <View style={styles.splitRow}>
+          <View style={styles.splitListPane}>{list}</View>
+          <View style={styles.splitDetailPane}>{rightPane}</View>
+        </View>
       ) : (
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-          <DoneSummary />
-          {perf && perf.closed_log.length > 0 && (
-            <View style={styles.closedLogCard}>
-              <Text style={[styles.sectionKicker, { marginBottom: spacing.sm }]}>CLOSED LOG</Text>
-              {perf.closed_log.map((item) => (
-                <ClosedRow key={item.id} item={item} onPress={() => navigation.navigate('Detail', { signalId: item.id })} />
-              ))}
-            </View>
-          )}
-          {(!perf || perf.closed_log.length === 0) && <Text style={styles.empty}>No closed trades yet.</Text>}
-        </ScrollView>
+        list
       )}
-
     </View>
   );
 }
@@ -271,6 +287,10 @@ function createStyles(colors: Colors) {
     container: { flex: 1, backgroundColor: colors.background },
     list: { flex: 1 },
     listContent: { padding: spacing.md },
+
+    splitRow: { flex: 1, flexDirection: 'row' },
+    splitListPane: { width: 380, borderRightWidth: 1, borderRightColor: colors.border },
+    splitDetailPane: { flex: 1 },
 
     header: { backgroundColor: colors.headerBg, borderBottomWidth: 1, borderBottomColor: colors.border, paddingTop: spacing.md },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: spacing.md },
@@ -312,6 +332,10 @@ function createStyles(colors: Colors) {
     cardHighlighted: {
       borderColor: withAlpha(colors.accent, 0.42),
       backgroundColor: colors.surfaceElevated,
+    },
+    cardSelected: {
+      borderColor: colors.accent,
+      borderWidth: 2,
     },
     cardTopRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
     cardTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 7 },
@@ -371,6 +395,9 @@ function createStyles(colors: Colors) {
       paddingHorizontal: 4,
       borderBottomWidth: 1,
       borderBottomColor: withAlpha(colors.border, 0.6),
+    },
+    closedRowSelected: {
+      backgroundColor: colors.surfaceElevated,
     },
     closedBar: { width: 3, height: 26, borderRadius: 2 },
     closedSymbol: { fontFamily: fonts.monoBold, fontSize: 12.5, color: colors.textPrimary },

@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { navigationRef } from '../navigation/RootNavigator';
+import { setSection, setSelectedSignalId } from '../state/navStore';
 
 function navigateToSignal(data: Record<string, unknown> | undefined) {
   const signalId = data?.signal_id;
@@ -11,35 +12,19 @@ function navigateToSignal(data: Record<string, unknown> | undefined) {
   }
 }
 
-// The web cold-start case (app launched fresh by a notification click, see
-// service-worker.js's clients.openWindow) reads a plain URL query param
-// instead of Expo's getLastNotificationResponseAsync -- window.location is
-// available immediately, but the navigator likely isn't ready on the very
-// first tick yet, so poll briefly rather than silently dropping the link.
-function waitForNavigationReady(maxAttempts = 20, intervalMs = 100): Promise<boolean> {
-  return new Promise((resolve) => {
-    let attempts = 0;
-    const check = () => {
-      if (navigationRef.isReady()) {
-        resolve(true);
-        return;
-      }
-      attempts += 1;
-      if (attempts >= maxAttempts) {
-        resolve(false);
-        return;
-      }
-      setTimeout(check, intervalMs);
-    };
-    check();
-  });
+// Web doesn't use react-navigation at all (see src/web/WebAppShell.tsx and
+// src/state/navStore.ts), so there's no "is the navigator ready" concern
+// the way there is on mobile -- these are plain, synchronous state updates.
+function navigateToSignalWeb(signalId: number) {
+  setSection('signals');
+  setSelectedSignalId(signalId);
 }
 
 function setupWebNotificationTapHandling(): () => void {
   // Already-open window: the service worker posts a message on notificationclick.
   const onMessage = (event: MessageEvent) => {
-    if (event.data?.type === 'nd-signal-notification-click') {
-      navigateToSignal({ signal_id: event.data.signal_id });
+    if (event.data?.type === 'nd-signal-notification-click' && typeof event.data.signal_id === 'number') {
+      navigateToSignalWeb(event.data.signal_id);
     }
   };
   if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
@@ -51,9 +36,7 @@ function setupWebNotificationTapHandling(): () => void {
     const raw = new URLSearchParams(window.location.search).get('signal');
     const signalId = raw != null ? Number(raw) : NaN;
     if (!Number.isNaN(signalId)) {
-      waitForNavigationReady().then((ready) => {
-        if (ready) navigateToSignal({ signal_id: signalId });
-      });
+      navigateToSignalWeb(signalId);
     }
   }
 
