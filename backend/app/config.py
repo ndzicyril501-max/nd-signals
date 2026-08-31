@@ -9,7 +9,7 @@ SCAN_REQUEST_DELAY_SEC = 0.1
 OB_SWING_LENGTH = 50
 ATR_PERIOD = 200
 KLINE_LIMIT = 300
-SL_ATR_MULT = 0.5
+SL_ATR_MULT = 0.75  # a little further beyond the OB than before (was 0.5), to give the stop more room
 TP1_PCT = 0.30
 TP2_PCT = 0.60
 SCAN_INTERVAL_SEC = 15 * 60
@@ -24,7 +24,7 @@ OB_FIB_RATIO = 0.5
 LEG_OTE_RATIO = 0.705
 FIB_LEVELS = [0.5, 0.618, 0.705, 0.79]
 
-MIN_RR = 0.0  # only alert setups with at least this R:R (reward >= MIN_RR x risk); 0 = off
+MIN_RR = 2.0  # only alert setups with at least a 2:1 R:R from the fib entry (reward >= 2x risk); 0 = off
 AT_ENTRY_TOL_PCT = 0.15
 TIMEFRAMES = [("D", "1D"), ("240", "4H")]
 NEAR_ENTRY_PCT = 5
