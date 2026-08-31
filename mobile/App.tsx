@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -17,15 +17,22 @@ import { ThemeProvider, useTheme } from './src/theme';
 
 SplashScreen.preventAutoHideAsync();
 
+// The UI is phone-width-oriented; on a desktop browser window this keeps it
+// from stretching into an unreadably wide single column instead of a
+// redesign for wide viewports.
+const DESKTOP_MAX_WIDTH = 480;
+
 function AppShell({ onLayoutRootView }: { onLayoutRootView: () => void }) {
   const { colors, resolvedMode } = useTheme();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }} onLayout={onLayoutRootView}>
-      <View style={{ flex: 1 }}>
+      <View style={Platform.OS === 'web' ? { flex: 1, width: '100%', maxWidth: DESKTOP_MAX_WIDTH, alignSelf: 'center' } : { flex: 1 }}>
         <RootNavigator />
       </View>
-      <BrandFooter />
+      <View style={Platform.OS === 'web' ? { width: '100%', maxWidth: DESKTOP_MAX_WIDTH, alignSelf: 'center' } : undefined}>
+        <BrandFooter />
+      </View>
       <StatusBar style={resolvedMode === 'dark' ? 'light' : 'dark'} />
     </View>
   );

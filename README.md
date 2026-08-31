@@ -107,6 +107,59 @@ EXPO_PUBLIC_API_KEY=<the same API_KEY>
 Rebuild (`eas build`, step 3) after changing this, since `EXPO_PUBLIC_*` vars are baked
 in at build time.
 
+## Desktop app (Progressive Web App)
+
+The same codebase also exports to a web build, installable from Chrome/Edge as a
+standalone desktop app with real push notifications. **Push here uses the browser's
+native Web Push API (VAPID), not Expo's push service** — `expo-notifications` doesn't
+support the web platform at all, so this is a second, independent delivery path.
+
+### 1. VAPID keys (already generated — just set them)
+
+A working key pair was generated during setup. Set these on **Render** (backend):
+```
+VAPID_PRIVATE_KEY_PEM=<the PEM block, keep secret>
+VAPID_PUBLIC_KEY=<the public key, safe to expose>
+```
+and add `EXPO_PUBLIC_VAPID_PUBLIC_KEY=<the same public key>` as a **GitHub Actions
+secret** (Settings → Secrets and variables → Actions) alongside `EXPO_PUBLIC_API_URL`
+and `EXPO_PUBLIC_API_KEY` — the deploy workflow (`.github/workflows/deploy-web.yml`)
+reads all three when building the web export. (Ask Claude for the generated key values
+if you don't have them noted down — regenerating a fresh pair with `py_vapid`'s
+`Vapid().generate_keys()` works too, they're just a keypair, not tied to any account.)
+
+### 2. CORS
+
+`backend/app/config.py`'s `CORS_ORIGINS` defaults to `https://ndzicyril501-max.github.io`
+(a GitHub Pages **user** origin — note this is the *host*, not the full URL with the repo
+path, since CORS checks origins not paths). If your GitHub username differs, set the
+`CORS_ORIGINS` env var on Render to match.
+
+### 3. Enable GitHub Pages
+
+Repo Settings → Pages → **Source: GitHub Actions**. That's it — the workflow handles the
+rest on every push to `main` that touches `mobile/`.
+
+### 4. Confirm the base path matches your repo name
+
+`mobile/app.json`'s `experiments.baseUrl` is set to `/nd-signals` (GitHub Pages serves a
+project site at `https://<user>.github.io/<repo-name>/`, and the web build needs to know
+that path prefix to resolve its own scripts/assets). Update it if you ever rename the repo.
+
+### 5. Install it
+
+Once deployed, visit `https://<your-username>.github.io/nd-signals/` in Edge or Chrome on
+Windows — an install icon appears in the address bar (or Menu → Apps → Install this
+site as an app). Installing gives a standalone window with its own taskbar icon.
+
+### Known tradeoff
+
+Unlike the mobile APK, `EXPO_PUBLIC_API_KEY` is visible to anyone opening this public
+page's browser devtools — a static site can't hide a build-time secret from its own
+visitors. For a personal tool with no real financial/credential data behind the API, this
+is an accepted tradeoff, not an oversight — see `backend/app/auth.py`'s comment for the
+same reasoning applied to the mobile app's key.
+
 ## Branding
 
 App icon/adaptive icon/favicon are generated from `ndgroup logo/nd-app-icon.svg` and

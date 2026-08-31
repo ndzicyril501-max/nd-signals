@@ -37,6 +37,9 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "experiments": {
+      "baseUrl": "/nd-signals"
+    },
     "extra": {
       "eas": {
         "projectId": "830e8d47-e46c-427a-8f6c-97aeffcc8ff3"

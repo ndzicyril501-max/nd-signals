@@ -49,3 +49,10 @@ export function registerDevice(expoPushToken: string, platform: 'ios' | 'android
     body: JSON.stringify({ expo_push_token: expoPushToken, platform }),
   });
 }
+
+export function registerWebPush(subscription: PushSubscriptionJSON): Promise<unknown> {
+  return request('/devices/register-web-push', {
+    method: 'POST',
+    body: JSON.stringify(subscription),
+  });
+}
