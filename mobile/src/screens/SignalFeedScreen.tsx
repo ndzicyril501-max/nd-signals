@@ -1,5 +1,5 @@
-import { ReactNode, useCallback, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Platform, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSignals, useStatsSummary, usePerformance } from '../api/hooks';
@@ -43,6 +43,23 @@ function relativeTime(iso: string): string {
 function unrealizedPct(entry: number, lastPrice: number | null): number | null {
   if (lastPrice == null) return null;
   return ((entry - lastPrice) / entry) * 100; // short: price falling from entry is favorable
+}
+
+// useFocusEffect requires a NavigationContainer ancestor -- true on mobile
+// (this screen sits inside RootNavigator's Tab/Stack navigators there), but
+// NOT on web, where WebAppShell renders this component directly, bypassing
+// react-navigation entirely (see src/web/WebAppShell.tsx). Platform.OS is a
+// build-time constant for the lifetime of the app, so branching which hook
+// runs here doesn't violate rules-of-hooks (the same branch executes on
+// every render for a given platform).
+function useRefreshOnFocus(callback: () => void) {
+  if (Platform.OS === 'web') {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(callback, []);
+  } else {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useFocusEffect(useCallback(callback, []));
+  }
 }
 
 function Header({ activeCount }: { activeCount: number }) {
@@ -221,14 +238,11 @@ export default function SignalFeedScreen({ onSelectSignal, selectedSignalId, rig
   const { data: doneData, refetch: refetchDone } = useSignals({ active: false, minScore: MIN_SCORE });
   const { data: perf, refetch: refetchPerf } = usePerformance();
 
-  useFocusEffect(
-    useCallback(() => {
-      refetch();
-      refetchDone();
-      refetchPerf();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-  );
+  useRefreshOnFocus(() => {
+    refetch();
+    refetchDone();
+    refetchPerf();
+  });
 
   const activeCount = activeData?.length ?? 0;
   const doneCount = doneData?.length ?? 0;
