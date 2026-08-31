@@ -33,3 +33,16 @@ NEAR_ENTRY_PCT = 5
 DATABASE_PATH = os.environ.get("DATABASE_PATH", "scanner.db")
 API_KEY = os.environ.get("API_KEY", "")
 EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
+
+# The mobile app never needed CORS (not a browser). The web/PWA build does --
+# comma-separated list of allowed origins, e.g. "https://user.github.io".
+CORS_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "https://ndzicyril501-max.github.io").split(",") if o.strip()]
+
+# Web Push (desktop PWA) -- separate from Expo push above since
+# expo-notifications does not support the web platform at all. Generate a
+# pair with `py_vapid`'s Vapid().generate_keys(); the private key is a
+# secret (server-side signing only), the public key is safe to expose and
+# gets baked into the web build as EXPO_PUBLIC_VAPID_PUBLIC_KEY.
+VAPID_PRIVATE_KEY_PEM = os.environ.get("VAPID_PRIVATE_KEY_PEM", "")
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY", "")
+VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL", "mailto:admin@ndgroup.example")

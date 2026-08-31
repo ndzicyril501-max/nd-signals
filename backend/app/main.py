@@ -1,14 +1,27 @@
 import threading
 
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import require_api_key
+from app.config import CORS_ORIGINS
 from app.db import init_db
 from app.routers import devices, signals, stats
 from app.scan_loop import run_once
 from app.scanner.bybit import get_all_candidates, get_all_tickers
 
 app = FastAPI(title="SMC Scanner API")
+
+# Only the web/PWA build needs this -- the mobile app isn't a browser and was
+# never subject to CORS. Auth is via the X-API-Key header (not cookies), so
+# there's no credentials-mode complication here.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(signals.router)
 app.include_router(devices.router)
 app.include_router(stats.router)

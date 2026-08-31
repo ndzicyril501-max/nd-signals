@@ -1,8 +1,20 @@
+import json
+
 import requests
+from py_vapid import Vapid
+from pywebpush import WebPushException, webpush
 from sqlmodel import Session, select
 
-from app.config import EXPO_PUSH_URL
-from app.models import DeviceToken, Signal
+from app.config import EXPO_PUSH_URL, VAPID_CLAIM_EMAIL, VAPID_PRIVATE_KEY_PEM
+from app.models import DeviceToken, Signal, WebPushSubscription
+
+# pywebpush's webpush() only parses a raw string as base64url(DER) -- it
+# does NOT accept PEM text directly (that needs Vapid.from_pem specifically).
+# Build the Vapid instance once from the PEM env var and hand pywebpush the
+# already-parsed instance instead of the raw string.
+_vapid: Vapid | None = None
+if VAPID_PRIVATE_KEY_PEM:
+    _vapid = Vapid.from_pem(VAPID_PRIVATE_KEY_PEM.encode())
 
 
 def _title_for(signal: Signal) -> str:
@@ -52,3 +64,51 @@ def send_expo_push(session: Session, signal: Signal) -> bool:
     except requests.RequestException as e:
         print(f"  [ERROR] Expo push send failed: {e}")
         return False
+
+
+def send_web_push(session: Session, signal: Signal) -> bool:
+    """Delivers to every registered browser (desktop PWA) via Web Push --
+    entirely separate from send_expo_push above, since expo-notifications
+    does not support the web platform at all. No VAPID keys configured yet
+    is treated the same as "no devices registered" (not a failure) so a
+    fresh deploy before the one-time VAPID setup step doesn't mute mobile
+    alerts. Returns False only on an actual send failure, same contract as
+    send_expo_push."""
+    if _vapid is None:
+        return True
+
+    subs = session.exec(select(WebPushSubscription)).all()
+    if not subs:
+        return True
+
+    payload = json.dumps({
+        "title": _title_for(signal),
+        "body": _body_for(signal),
+        "signal_id": signal.id,
+    })
+
+    any_failure = False
+    for sub in subs:
+        try:
+            webpush(
+                subscription_info={
+                    "endpoint": sub.endpoint,
+                    "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
+                },
+                data=payload,
+                vapid_private_key=_vapid,
+                vapid_claims={"sub": VAPID_CLAIM_EMAIL},
+                ttl=3600,
+            )
+        except WebPushException as e:
+            status = e.response.status_code if e.response is not None else None
+            if status in (404, 410):
+                # Browser unsubscribed or the subscription expired -- prune it,
+                # this is expected lifecycle, not a delivery failure.
+                session.delete(sub)
+                session.commit()
+            else:
+                print(f"  [ERROR] Web push send failed ({status}): {e}")
+                any_failure = True
+
+    return not any_failure

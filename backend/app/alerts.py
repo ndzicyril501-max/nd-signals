@@ -3,16 +3,22 @@ import json
 from sqlmodel import Session
 
 from app.models import Signal
-from app.notifications import send_expo_push
+from app.notifications import send_expo_push, send_web_push
 
 
 def persist_and_notify(session: Session, gainer: dict, setup: dict,
                         at_entry: bool, in_zone: bool, distance_pct: float,
                         phase: str) -> tuple[Signal, bool]:
     """Replaces the old format_alert()+send_telegram() tail: records the
-    signal in the DB and pushes it to every registered device via Expo.
+    signal in the DB and pushes it to every registered device -- mobile via
+    Expo, desktop/browser via Web Push (two independent delivery paths,
+    since expo-notifications doesn't support the web platform at all).
     Returns (signal, notified) -- notified gates whether the caller is
     allowed to update SignalState, so a failed send never mutes an entry.
+    If either channel genuinely fails (not just "no devices registered"),
+    notified is False and the next scan retries both -- a possible duplicate
+    on the channel that already succeeded is preferred over silently
+    dropping the one that didn't.
     """
     signal = Signal(
         symbol=setup["symbol"],
@@ -56,7 +62,9 @@ def persist_and_notify(session: Session, gainer: dict, setup: dict,
     print(f"  {signal.symbol} [{signal.timeframe}]: SIGNAL RECORDED (id {signal.id}, "
           f"score {signal.score}/10, R:R {signal.rr}, {where})")
 
-    notified = send_expo_push(session, signal)
+    expo_ok = send_expo_push(session, signal)
+    web_ok = send_web_push(session, signal)
+    notified = expo_ok and web_ok
     signal.notified = notified
     session.add(signal)
     session.commit()

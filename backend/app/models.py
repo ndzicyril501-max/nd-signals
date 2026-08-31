@@ -94,3 +94,17 @@ class DeviceToken(SQLModel, table=True):
     label: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_seen_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class WebPushSubscription(SQLModel, table=True):
+    """A browser's PushSubscription (desktop PWA) -- the Web Push analogue of
+    DeviceToken. expo-notifications does not support the web platform at
+    all, so this is delivered via pywebpush + VAPID instead of Expo's push
+    service, entirely separate from the mobile path."""
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    endpoint: str = Field(unique=True, index=True)
+    p256dh: str
+    auth: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    last_seen_at: datetime = Field(default_factory=datetime.utcnow)
