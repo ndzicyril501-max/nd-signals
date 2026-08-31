@@ -25,7 +25,7 @@ OB_FIB_RATIO = 0.5
 LEG_OTE_RATIO = 0.705
 FIB_LEVELS = [0.5, 0.618, 0.705, 0.79]
 
-MIN_RR = 0.0
+MIN_RR = 2.0  # only alert setups with at least a 1:2 R:R (reward >= 2x risk); 0 = off
 AT_ENTRY_TOL_PCT = 0.15
 TIMEFRAMES = [("D", "1D"), ("240", "4H")]
 NEAR_ENTRY_PCT = 5
