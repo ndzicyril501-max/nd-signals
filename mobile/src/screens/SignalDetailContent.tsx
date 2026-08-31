@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { ActivityIndicator, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSignalDetail } from '../api/hooks';
 import PhaseChip from '../components/PhaseChip';
 import PositionGauge from '../components/PositionGauge';
+import { setSelectedSignalId } from '../state/navStore';
 import { Colors, fonts, radius, spacing, useTheme, withAlpha } from '../theme';
 
 interface Props {
@@ -63,6 +64,17 @@ export default function SignalDetailContent({ signalId, onBack }: Props) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: s, loading, error } = useSignalDetail(signalId);
   const insets = useSafeAreaInsets();
+  const notFound = error != null && /\b404\b/.test(error);
+
+  // A selected id can go stale on its own (e.g. a push notification's
+  // ?signal=<id> link opened after the backend's DB was reset -- Render's
+  // free tier disk is ephemeral, so ids restart on every redeploy). On the
+  // web split view there's no "back" to fall back on, so drop the dead
+  // selection and let the empty-state placeholder take over instead of
+  // pinning the pane to a permanent error.
+  useEffect(() => {
+    if (notFound && !onBack) setSelectedSignalId(null);
+  }, [notFound, onBack]);
 
   return (
     <View style={styles.container}>
@@ -96,9 +108,14 @@ export default function SignalDetailContent({ signalId, onBack }: Props) {
           <ActivityIndicator color={colors.accent} />
         </View>
       )}
-      {error && !loading && (
+      {error && !loading && !notFound && (
         <View style={styles.centered}>
           <Text style={styles.error}>{error}</Text>
+        </View>
+      )}
+      {notFound && !loading && onBack && (
+        <View style={styles.centered}>
+          <Text style={styles.error}>This signal is no longer available.</Text>
         </View>
       )}
 
